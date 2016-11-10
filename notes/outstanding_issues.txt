@@ -1,0 +1,23 @@
+[23 September 2010]
+Issue: Deleting an MSA when it is actively being edited
+Status: open
+
+Issue: Renaming something in the data tree does not reflect labels in the various target tables
+Status: open
+
+[27 September 2010]
+Issue:    Remove copy constructor and assignment operator for the Msa class. How to handle Subseq
+          pointers? Could make duplicate copies...
+Status:   closed
+Solution: Msa has been converted into a QObject derivative with slots and signal capacity. Consequently,
+          it is not possible to copy or assign these objects.
+
+[4 October 2010]
+Issue:    No positional information for Msa subseqs stored in the database.
+Status:   open
+Solution: Add a position integer field to the msa subseq join table.
+
+[19 Octoboer 2010]
+Issue:    Dealing with read-only files
+Status:   open
+Solution: implement a cross-platform means for checking permissions

@@ -1,0 +1,40 @@
+[Primer Design Wizard]
+Disable "finish/next" button until the screen has initialized to prevent accidental clicks.
+Generate results from the params screen.
+Hide params and display "processing" indicator while the results are being generated.
+Disable navigation while results are being generated.
+Generate results in a background thread.
+Trim the sequence being displayed so that the last char is not a space.
+Display the last selected primer's details beneath the sequence on the results page (color scheme for F/R).
+Validate primer parameters before running algorithm, and display errors above the appropriate fields.
+Create restriction enzyme control.
+ - Browse button pops up the enzyme browser screen.
+ - Combo-box allows user to type/select enzyme by name.
+ - [Text-box] allows user to type enzyme sequence directly
+ - If the user changes the combo-box, the enzyme seequence textbox is updated
+ - If the user changes the textbox, the combobox is updated (blank if no name matches)
+In the primer results list, the last-selected primer should be given a different color.
+Review screen displays all primers, with editable generated name.
+Finish saves primers to the DB, associated w/a sequence.
+Primer results are limited to 10 at a time, with up to 5 pages of pagination. (quick win show 20, no pagination)
+Make all screens scale gracefully with growth of the window.
+Organize labels above their respective fields so font-changes between OSes don't screw thigns up.
+Add the max TM differential, which filters out any results having a difference in TM greater than the specified value
+Add helpful screen titles (e.g. "Name and Review Primers.")
+Automatically generate names for primer pairs, the forward/reverse primers will be <{PAIRNAME}_f> or <{PAIRNAME}_r> repsectively.
+"Use amplicon bounds." checkbox which locks the amplicon range to the full amplicon bounds.
+Add 3' textbox which allows up to 3 characters to be input.
+
+
+TBD:
+ How do we show the restriction enzyme in the primer results screen?
+ How do we display the "Name and Review" screen?
+
+
+[Data Organizer - Primer Screen]
+List sequences by name on the left (single-select).
+When sequence is selected, display its name (editable), sequence, notes (editable), and primers (name editable)
+When a primer is selected, the user can click (menu, buton, or something) to view the params which generated it.
+The params popup will allow the user to "view in primer designer", which will pull up the designer wizard.
+User can search all primers (regardless of associated sequence) by name.
+User can copy any cell in the primer data grid.

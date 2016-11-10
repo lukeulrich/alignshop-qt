@@ -1,0 +1,111 @@
+/****************************************************************************
+**
+** Copyright (C) 2011 Agile Genomics, LLC
+** All rights reserved.
+** Author: Luke Ulrich
+**
+****************************************************************************/
+
+#ifndef ABSTRACTADOCSOURCE_H
+#define ABSTRACTADOCSOURCE_H
+
+#include "IAdocSource.h"
+#include "../macros.h"
+
+class AbstractAdocSource : public IAdocSource
+{
+public:
+    virtual void begin()
+    {
+    }
+
+    virtual void end()
+    {
+    }
+
+    virtual AnonSeqPod readAnonSeq(int id, Grammar grammar)
+    {
+        switch(grammar)
+        {
+        case eAminoGrammar:
+            return readAminoAnonSeq(id);
+        default:
+            ASSERT(0);
+            return AnonSeqPod();
+        }
+    }
+
+    virtual QVector<AnonSeqPod> readAnonSeqs(const QVector<int> &ids, Grammar grammar)
+    {
+        switch(grammar)
+        {
+        case eAminoGrammar:
+            return readAminoAnonSeqs(ids);
+
+        default:
+            ASSERT(0);
+            return QVector<AnonSeqPod>();
+        }
+    }
+
+    virtual AnonSeqPod readAnonSeqFromDigest(const QByteArray &digest, Grammar grammar)
+    {
+        switch(grammar)
+        {
+        case eAminoGrammar:
+            return readAminoAnonSeqFromDigest(digest);
+        default:
+            ASSERT(0);
+            return AnonSeqPod();
+        }
+    }
+
+    virtual QVector<AnonSeqPod> readAnonSeqsFromDigests(const QVector<QByteArray> &digests, Grammar grammar)
+    {
+        switch(grammar)
+        {
+        case eAminoGrammar:
+            return readAminoAnonSeqsFromDigests(digests);
+        default:
+            ASSERT(0);
+            return QVector<AnonSeqPod>();
+        }
+    }
+
+    virtual void eraseAminoSeqRecord(int id)
+    {
+        eraseAminoSeqRecords(QVector<int>() << id);
+    }
+
+    virtual AnonSeqPod          readAminoAnonSeq(int id)
+    {
+        return readAminoAnonSeqs(QVector<int>() << id).first();
+    }
+    virtual AnonSeqPod          readAminoAnonSeqFromDigest(const QByteArray &digest)
+    {
+        return readAminoAnonSeqsFromDigests(QVector<QByteArray>() << digest).first();
+    }
+
+    virtual void eraseAminoAnonSeq(int id)
+    {
+        eraseAminoAnonSeqs(QVector<int>() << id);
+    }
+
+    virtual AminoSeqRecordPod readAminoSeqRecord(int id)
+    {
+        return readAminoSeqRecords(QVector<int>() << id).first();
+    }
+
+    virtual void saveAminoSeqRecord(AminoSeqRecordPod &aminoSeqRecordPod)
+    {
+        QVector<AminoSeqRecordPod> carrier;
+        carrier << aminoSeqRecordPod;
+        saveAminoSeqRecords(carrier);
+        aminoSeqRecordPod = carrier.first();
+    }
+
+protected:
+    AbstractAdocSource() : IAdocSource() {}
+};
+
+#endif // ABSTRACTADOCSOURCE_H

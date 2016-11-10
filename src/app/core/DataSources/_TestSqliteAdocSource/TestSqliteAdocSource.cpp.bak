@@ -1,0 +1,476 @@
+#include <QtCore/QString>
+#include <QtTest/QtTest>
+
+#include <QtCore/QCryptographicHash>
+
+#include "../SqliteAdocSource.h"
+
+class TestSqliteAdocSource : public QObject
+{
+    Q_OBJECT
+
+public:
+    TestSqliteAdocSource();
+
+private Q_SLOTS:
+    void createAndOpen();
+    void insertAminoAnonSeq();
+    void readAminoAnonSeqs();
+    void readAminoAnonSeqsFromDigests();
+    void eraseAminoAnonSeqs();
+    void readCoils();
+    void saveCoils();
+    void readSegs();
+    void saveSegs();
+    void readAminoSeqRecord();
+    void saveAminoSeqRecords();
+
+private:
+    void createTestDatabase(const QString &fileName);
+
+    bool isolate_;
+};
+
+TestSqliteAdocSource::TestSqliteAdocSource()
+{
+    isolate_ = false;
+}
+
+void TestSqliteAdocSource::createTestDatabase(const QString &fileName)
+{
+    if (isolate_)
+        return;
+
+    QFile::remove(fileName);
+
+    SqliteAdocSource source;
+    source.createAndOpen(fileName);
+
+    QSqlDatabase db = source.database();
+    QSqlQuery query(db);
+
+    db.transaction();
+    QVERIFY(query.exec("INSERT INTO astrings(id, digest, sequence) VALUES (10, 'digest', 'ABCDEF')"));
+
+    QVERIFY(query.exec("INSERT INTO coils(id, astring_id, start, stop) VALUES (1, 10, 25, 30)"));
+    QVERIFY(query.exec("INSERT INTO coils(id, astring_id, start, stop) VALUES (2, 10, 35, 40)"));
+
+    QVERIFY(query.exec("INSERT INTO segs(id, astring_id, start, stop) VALUES (1, 10, 25, 30)"));
+    QVERIFY(query.exec("INSERT INTO segs(id, astring_id, start, stop) VALUES (2, 10, 35, 40)"));
+
+    QVERIFY(query.exec("INSERT INTO astrings(id, digest, sequence) VALUES (11, 'digest2', 'FEDCBA')"));
+
+    QVERIFY(query.exec("INSERT INTO amino_seqs (id, astring_id, start, stop, name, description) VALUES (1, 10, 2, 6, 'PAS', 'Oxygen regulator')"));
+    QVERIFY(query.exec("INSERT INTO amino_seqs (id, astring_id, start, stop, name, description) VALUES (2, 11, 1, 5, 'RR', 'Response regulator')"));
+    db.commit();
+}
+
+void TestSqliteAdocSource::createAndOpen()
+{
+    if (isolate_)
+        return;
+
+    SqliteAdocSource source_;
+
+    QString fileName = "bob.db";
+
+    QFile::remove(fileName);
+
+    QVERIFY(source_.createAndOpen(fileName));
+    QVERIFY(source_.isOpen());
+    QVERIFY(QFile::exists(fileName));
+
+    QFile::remove(fileName);
+}
+
+void TestSqliteAdocSource::insertAminoAnonSeq()
+{
+    if (isolate_)
+        return;
+
+    QString fileName = "bob.db";
+    createTestDatabase(fileName);
+
+    SqliteAdocSource source;
+    QVERIFY(source.open(fileName));
+
+    source.begin();
+
+    AnonSeqPod pod(-1, "ABCDEF");
+    pod.digest_ = QCryptographicHash::hash(pod.sequence_, QCryptographicHash::Md5);
+    source.insertAminoAnonSeq(pod);
+
+    QVERIFY(pod.id_ > 0);
+
+    // Test: check that the sequence was inserted
+    {
+        QSqlDatabase db = source.database();
+        QSqlQuery query(db);
+        QVERIFY(query.exec(QString("SELECT digest, sequence FROM astrings WHERE id = %1").arg(pod.id_)));
+        QVERIFY(query.next());
+        QCOMPARE(query.value(0).toByteArray(), pod.digest_);
+        QCOMPARE(query.value(1).toByteArray(), pod.sequence_);
+        QVERIFY(!query.next());
+    }
+
+    source.close();
+}
+
+void TestSqliteAdocSource::readAminoAnonSeqs()
+{
+    if (isolate_)
+        return;
+
+    QString fileName = "bob.db";
+    createTestDatabase(fileName);
+
+    SqliteAdocSource source;
+    QVERIFY(source.open(fileName));
+
+    source.begin();
+
+    QVector<AnonSeqPod> pods = source.readAminoAnonSeqs(QVector<int>() << 9 << 10);
+    QCOMPARE(pods.size(), 2);
+    QCOMPARE(pods.at(0).id_, 0);
+    QVERIFY(pods.at(0).digest_.isEmpty());
+    QVERIFY(pods.at(0).sequence_.isEmpty());
+
+    QCOMPARE(pods.at(1).id_, 10);
+    QCOMPARE(pods.at(1).sequence_, QByteArray("ABCDEF"));
+
+    pods = source.readAminoAnonSeqs(QVector<int>() << 10 << 11);
+    QCOMPARE(pods.size(), 2);
+    QCOMPARE(pods.at(0).id_, 10);
+    QCOMPARE(pods.at(0).sequence_, QByteArray("ABCDEF"));
+
+    QCOMPARE(pods.at(1).id_, 11);
+    QCOMPARE(pods.at(1).sequence_, QByteArray("FEDCBA"));
+}
+
+void TestSqliteAdocSource::readAminoAnonSeqsFromDigests()
+{
+    if (isolate_)
+        return;
+
+    QString fileName = "bob.db";
+    createTestDatabase(fileName);
+
+    SqliteAdocSource source;
+    QVERIFY(source.open(fileName));
+    source.begin();
+
+    QVector<AnonSeqPod> pods = source.readAminoAnonSeqsFromDigests(QVector<QByteArray>() << "blargh" << "digest");
+    QCOMPARE(pods.size(), 2);
+    QCOMPARE(pods.at(0).id_, 0);
+    QVERIFY(pods.at(0).digest_.isEmpty());
+    QVERIFY(pods.at(0).sequence_.isEmpty());
+
+    QCOMPARE(pods.at(1).id_, 10);
+    QCOMPARE(pods.at(1).sequence_, QByteArray("ABCDEF"));
+
+    pods = source.readAminoAnonSeqsFromDigests(QVector<QByteArray>() << "digest" << "digest2");
+    QCOMPARE(pods.size(), 2);
+    QCOMPARE(pods.at(0).id_, 10);
+    QCOMPARE(pods.at(0).sequence_, QByteArray("ABCDEF"));
+
+    QCOMPARE(pods.at(1).id_, 11);
+    QCOMPARE(pods.at(1).sequence_, QByteArray("FEDCBA"));
+}
+
+void TestSqliteAdocSource::eraseAminoAnonSeqs()
+{
+    if (isolate_)
+        return;
+
+    QString fileName = "bob.db";
+    createTestDatabase(fileName);
+
+    SqliteAdocSource source;
+    QVERIFY(source.open(fileName));
+    source.begin();
+
+    QSqlQuery q("SELECT count(*) from astrings", source.database());
+    q.next();
+    QCOMPARE(q.value(0).toInt(), 2);
+
+    source.eraseAminoAnonSeq(11);
+
+    q.exec();
+    q.next();
+    QCOMPARE(q.value(0).toInt(), 1);
+
+    source.eraseAminoAnonSeq(2);
+    q.exec();
+    q.next();
+    QCOMPARE(q.value(0).toInt(), 1);
+
+    source.eraseAminoAnonSeq(10);
+    q.exec();
+    q.next();
+    QCOMPARE(q.value(0).toInt(), 0);
+}
+
+void TestSqliteAdocSource::readCoils()
+{
+    if (isolate_)
+        return;
+
+    QString fileName = "bob.db";
+    createTestDatabase(fileName);
+
+    SqliteAdocSource source;
+    QVERIFY(source.open(fileName));
+    source.begin();
+
+    QVector<CoilPod> coils = source.readCoils(9, 34);
+    QVERIFY(coils.isEmpty());
+
+    coils = source.readCoils(10, 10);
+    QVERIFY(coils.isEmpty());
+
+    coils = source.readCoils(10, 28);
+    QVERIFY(coils.isEmpty());
+
+    coils = source.readCoils(10, 30);
+    QCOMPARE(coils.size(), 1);
+    QCOMPARE(coils.at(0).id_, 1);
+    QCOMPARE(coils.at(0).start_, 25);
+    QCOMPARE(coils.at(0).stop_, 30);
+
+    coils = source.readCoils(10, 37);
+    QCOMPARE(coils.size(), 1);
+    QCOMPARE(coils.at(0).id_, 1);
+    QCOMPARE(coils.at(0).start_, 25);
+    QCOMPARE(coils.at(0).stop_, 30);
+
+    coils = source.readCoils(10, 50);
+    QCOMPARE(coils.size(), 2);
+    QCOMPARE(coils.at(0).id_, 1);
+    QCOMPARE(coils.at(0).start_, 25);
+    QCOMPARE(coils.at(0).stop_, 30);
+
+    QCOMPARE(coils.at(1).id_, 2);
+    QCOMPARE(coils.at(1).start_, 35);
+    QCOMPARE(coils.at(1).stop_, 40);
+}
+
+void TestSqliteAdocSource::saveCoils()
+{
+    if (isolate_)
+        return;
+
+    QString fileName = "bob.db";
+    createTestDatabase(fileName);
+
+    SqliteAdocSource source;
+    QVERIFY(source.open(fileName));
+    source.begin();
+
+    // Test: changing the first coil
+    QVector<CoilPod> coils = source.readCoils(10, 80);
+    coils.first().start_ = 70;
+    coils.first().stop_ = 80;
+
+    source.saveCoils(10, coils);
+    QVector<CoilPod> coils_after = source.readCoils(10, 90);
+    QVERIFY(coils != coils_after);
+
+    // Test: adding a new coil and removing an existing coil
+    coils.pop_front();
+    coils << CoilPod(0, 5, 10);
+    source.saveCoils(10, coils);
+    coils_after = source.readCoils(10, 90);
+    QCOMPARE(coils_after.size(), 2);
+    QCOMPARE(coils_after.first().id_, 3);       // Because the array is returned in ascending order by start
+    QCOMPARE(coils_after.first().start_, 5);    // The first one is the last one added in this case.
+    QCOMPARE(coils_after.first().stop_, 10);
+
+    QCOMPARE(coils_after.last().id_, 2);
+    QCOMPARE(coils_after.last().start_, 35);
+    QCOMPARE(coils_after.last().stop_, 40);
+
+    // Test: removing all coils
+    QVector<CoilPod> noCoils;
+    source.saveCoils(10, noCoils);
+    coils_after = source.readCoils(10, 100);
+    QVERIFY(coils_after.isEmpty());
+}
+
+void TestSqliteAdocSource::readSegs()
+{
+    if (isolate_)
+        return;
+
+    QString fileName = "bob.db";
+    createTestDatabase(fileName);
+
+    SqliteAdocSource source;
+    QVERIFY(source.open(fileName));
+    source.begin();
+
+    QVector<SegPod> segs = source.readSegs(9, 34);
+    QVERIFY(segs.isEmpty());
+
+    segs = source.readSegs(10, 10);
+    QVERIFY(segs.isEmpty());
+
+    segs = source.readSegs(10, 28);
+    QVERIFY(segs.isEmpty());
+
+    segs = source.readSegs(10, 30);
+    QCOMPARE(segs.size(), 1);
+    QCOMPARE(segs.at(0).id_, 1);
+    QCOMPARE(segs.at(0).start_, 25);
+    QCOMPARE(segs.at(0).stop_, 30);
+
+    segs = source.readSegs(10, 37);
+    QCOMPARE(segs.size(), 1);
+    QCOMPARE(segs.at(0).id_, 1);
+    QCOMPARE(segs.at(0).start_, 25);
+    QCOMPARE(segs.at(0).stop_, 30);
+
+    segs = source.readSegs(10, 50);
+    QCOMPARE(segs.size(), 2);
+    QCOMPARE(segs.at(0).id_, 1);
+    QCOMPARE(segs.at(0).start_, 25);
+    QCOMPARE(segs.at(0).stop_, 30);
+
+    QCOMPARE(segs.at(1).id_, 2);
+    QCOMPARE(segs.at(1).start_, 35);
+    QCOMPARE(segs.at(1).stop_, 40);
+}
+
+void TestSqliteAdocSource::saveSegs()
+{
+    if (isolate_)
+        return;
+
+    QString fileName = "bob.db";
+    createTestDatabase(fileName);
+
+    SqliteAdocSource source;
+    QVERIFY(source.open(fileName));
+    source.begin();
+
+    // Test: changing the first seg
+    QVector<SegPod> segs = source.readSegs(10, 80);
+    segs.first().start_ = 70;
+    segs.first().stop_ = 80;
+
+    source.saveSegs(10, segs);
+    QVector<SegPod> segs_after = source.readSegs(10, 90);
+    QVERIFY(segs != segs_after);
+
+    // Test: adding a new seg and removing an existing seg
+    segs.pop_front();
+    segs << SegPod(0, 5, 10);
+    source.saveSegs(10, segs);
+    segs_after = source.readSegs(10, 90);
+    QCOMPARE(segs_after.size(), 2);
+    QCOMPARE(segs_after.first().id_, 3);       // Because the array is returned in ascending order by start
+    QCOMPARE(segs_after.first().start_, 5);    // The first one is the last one added in this case.
+    QCOMPARE(segs_after.first().stop_, 10);
+
+    QCOMPARE(segs_after.last().id_, 2);
+    QCOMPARE(segs_after.last().start_, 35);
+    QCOMPARE(segs_after.last().stop_, 40);
+
+    // Test: removing all segs
+    QVector<SegPod> noSegs;
+    source.saveSegs(10, noSegs);
+    segs_after = source.readSegs(10, 100);
+    QVERIFY(segs_after.isEmpty());
+}
+
+void TestSqliteAdocSource::readAminoSeqRecord()
+{
+    if (isolate_)
+        return;
+
+    QString fileName = "bob.db";
+    createTestDatabase(fileName);
+
+    SqliteAdocSource source;
+    QVERIFY(source.open(fileName));
+    source.begin();
+
+    AminoSeqRecordPod pod = source.readAminoSeqRecord(-56);
+    QCOMPARE(pod.id_, 0);
+
+    QVector<AminoSeqRecordPod> pods = source.readAminoSeqRecords(QVector<int>() << 1 << 2 << 99);
+    QCOMPARE(pods.size(), 3);
+    QCOMPARE(pods.first().id_, 1);
+    QCOMPARE(pods.first().astringId_, 10);
+    QCOMPARE(pods.first().start_, 2);
+    QCOMPARE(pods.first().stop_, 6);
+    QCOMPARE(pods.first().name_, QString("PAS"));
+    QCOMPARE(pods.first().description_, QString("Oxygen regulator"));
+
+    QCOMPARE(pods.at(1).id_, 2);
+    QCOMPARE(pods.at(1).astringId_, 11);
+    QCOMPARE(pods.at(1).start_, 1);
+    QCOMPARE(pods.at(1).stop_, 5);
+    QCOMPARE(pods.at(1).name_, QString("RR"));
+    QCOMPARE(pods.at(1).description_, QString("Response regulator"));
+
+    QCOMPARE(pods.last().id_, 0);
+}
+
+void TestSqliteAdocSource::saveAminoSeqRecords()
+{
+    if (isolate_)
+        return;
+
+    QString fileName = "bob.db";
+    createTestDatabase(fileName);
+
+    SqliteAdocSource source;
+    QVERIFY(source.open(fileName));
+    source.begin();
+
+    // Test the insert
+    AminoSeqRecordPod pod(-1, 10, 1, 2, "Bob", "Jamaican singer");
+    source.saveAminoSeqRecord(pod);
+    QVERIFY(pod.id_ > 0);
+
+    // Check the database that it was inserted
+    QSqlQuery q(source.database());
+    QVERIFY(q.exec(QString("SELECT astring_id, start, stop, name, description FROM amino_seqs WHERE id = %1").arg(pod.id_)));
+    QVERIFY(q.next());
+    QCOMPARE(q.value(0).toInt(), pod.astringId_);
+    QCOMPARE(q.value(1).toInt(), pod.start_);
+    QCOMPARE(q.value(2).toInt(), pod.stop_);
+    QCOMPARE(q.value(3).toString(), QString(pod.name_));
+    QCOMPARE(q.value(4).toString(), QString(pod.description_));
+
+    // Test the update of multiple records
+    pod.start_ = 3;
+    pod.stop_ = 4;
+    pod.name_ = "Eric Clapton";
+    QVector<AminoSeqRecordPod> pods;
+    pods << pod;
+    pods << AminoSeqRecordPod(-3, 11, 2, 4, "HK", "Histidine kinase");
+    pods << AminoSeqRecordPod(2, 11, 2, 4, "RR2", "Response_reg");
+
+    source.saveAminoSeqRecords(pods);
+    QCOMPARE(pods.size(), 3);
+    QVERIFY(pods.at(1).id_ > 0);
+
+    // Check that the database was updated
+    for (QVector<AminoSeqRecordPod>::ConstIterator it = pods.begin(); it != pods.end(); ++it)
+    {
+        const AminoSeqRecordPod &p = *it;
+
+        QVERIFY(q.exec(QString("SELECT astring_id, start, stop, name, description FROM amino_seqs WHERE id = %1").arg(p.id_)));
+        QVERIFY(q.next());
+        QCOMPARE(q.value(0).toInt(), p.astringId_);
+        QCOMPARE(q.value(1).toInt(), p.start_);
+        QCOMPARE(q.value(2).toInt(), p.stop_);
+        QCOMPARE(q.value(3).toString(), QString(p.name_));
+        QCOMPARE(q.value(4).toString(), QString(p.description_));
+    }
+}
+
+QTEST_APPLESS_MAIN(TestSqliteAdocSource);
+
+#include "TestSqliteAdocSource.moc"

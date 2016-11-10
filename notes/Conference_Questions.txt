@@ -1,0 +1,47 @@
+[1 Sep 2010]
+Question: How to utilize a QSortFilterProxyModel on a source model that has different number of columns at different levels?
+Context:  SliceModel
+Problems: headers do not display properly and sorting from a QTableView by clicking on the headers does nothing
+
+
+
+[14 Sep 2010]
+Question: Is it really necessary to do robust checking in all models? For example, in every method check that the indices
+          belong to the current model, check ranges, check parents, etc. Is it safe to assume that if the index function
+          only creates valid indices that all indices passed to these functions are safe to use? What about external use
+          outside of "trusted" QAbstractItemView's?
+Context:  QAbstractItemModel
+
+
+Question: Is it advisable to add release mode guards after Q_ASSERTs? I suppose it matters how complete the debug testing is
+          and if it is sufficient to trust all these cases. In release mode, without release guards = potential crash; with
+          release guard - what is the result? Perhaps no crash, but potentially erratic behavior.
+Context:  General
+
+
+
+[15 Sep 2010]
+Question: What is the best way to incorporate printf-like arguments into macros like qWarning?
+Context:  Conversion of QString to const char *
+Problems: Currently, I have to convert from QString -> QByteArray -> const char * via QString().toAscii().constData(). This
+          is awkard and long. Surely there is a better approach.
+
+
+
+[23 Sep 2010]
+Bug?:     Switching between release and debug builds in QtCreator (Build | Set build configuration) does not actually change
+          the build process to release or debug. Restarting does not correct this.
+
+
+Bug?:     When switching the Qt libraries used to build a project, it is necessary to restart QtCreator before the change will
+          take effect.
+
+[25 Oct 2010]
+Question: Is there a quick way of converting a QList<int> -> QList<QVariant> or some other type?
+
+Question: Using QSignalSpy is there any way to test the order of occurrence of multiple events? For instance, if Class A emits
+          two signals, sigX and sigY, and both are emitted in response to some method call, can I determine if sigX came first
+          or sigY?
+
+[28 Octo 2010]
+Question: Is it necessary to provide a typeName argument to qRegisterMetaType?

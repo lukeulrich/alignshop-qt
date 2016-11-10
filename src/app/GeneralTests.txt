@@ -1,0 +1,75 @@
+-- Slow load request timer to 1000 ms per batch
+   Click on node that has several thousand entities to load
+   Delete the node
+   Close the program
+
+   Error: adocTreeModel_ is freed before an undoStack_ that has commands that utilize adocTreeModel_ upon destruction.
+   For instance, the RemoveAdocTreeNodesCommand maintains an AdocTreeNodeVector of nodes that have been removed. Some
+   of these nodes may contain entity pointers and therefore, before destruction, it emits a nodesAboutToBeDestroyed
+   signal through the AdocTreeModel_ instance. If AdocTreeModel_ has already been deleted, then this will segfault.
+
+   Solution: free the undoStack_ before adocTreeModel_. This is performed manually.
+
+-- Hygiene check: undoStack_ is cleared **before** saving the repository contents.
+   Rationale: Some of the tree modification commands (namely Remove/Insert) maintain a collection of AdocTreeNodes,
+              which may contain references to specific entities. If the repositories are saved first, then there may
+              be a dangling entity.
+
+-- New file
+   Import one or sequences (to create some entities)
+   Close
+
+   Check that no outstanding references remain
+
+-- Import sequences
+   Save file
+   The view should be re-sorted to display new ids in their proper order
+
+-- Delete some nodes
+   Undo the delete
+   Close
+
+   Error: throws a refcount error in the repository for AminoSeq
+   Root cause: unerasing calls GenericRepository::add(...) which internally increases the reference count
+   Solution: decrease the reference count in the unerase method before adding
+
+-- Import some rows
+   Select and cut them
+   Undo so that the cut selection is now removed
+
+   Check that the previously cut rows are removed from the cutOrCopyIndices_ vector
+
+-- Alignment view
+   Insert some C-terminal gaps
+   Move mouse into the one of these terminal gap columns
+   Hit Control-G to remove all gaps
+   Program should gracefully update the mouse anchor point and not throw an assertion!
+
+   The problem arises from the fact that the mouse anchor point should be necessarily updated if it is located within a
+   region that has been removed.
+
+-- Create new file
+   Import Msa
+   Open the Msa
+   Close the Msa
+   Re-open the Msa - it should show the original msa
+
+   Currently, it is unloaded everytime the MsaWindow closes. This should only be the case when it has been saved to the
+   database.
+
+-- Open Msa in separate window
+   Close the sequence organizer
+   The msaWindow should close as well
+
+-- Open sequence organizer
+   Sort on an editable column for the table view (e.g. notes)
+   Select an entity row (say a sequence)
+   Change the notes in the bottommost text editor deal
+   Select another entity node
+   The notes editor should be available for this most recently selected node.
+
+   Currently, the notes edit widget is disabled after the above. This occurs because dynamic sort is enabled for the
+   tableview and as such when the notes field is updated (via setData), this automatically triggers sort to be executed.
+   The sort then clears any selection, which thus leads the application to believe that no entity is selected.
+
+   Solution: turn off dynamic sorting

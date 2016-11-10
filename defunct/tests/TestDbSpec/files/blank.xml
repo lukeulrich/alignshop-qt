@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<db_schema xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="db_schema.xsd">
+
+<version>0.1</version>
+<table name="aseqs" comment="Unique, anonymous amino acid sequences">
+  <field name="id" type="integer" autoincrement="true" comment="Primary key; sequence generated integer" />
+  <field name="hash" type="text" comment="SHA1 hash of sequence for identification purposes; must be unique" />
+  <field name="sequence" type="text" not_null="true" />
+  <primaryKey>id</primaryKey>
+</table>
+<table name="amino_seqs" comment="Amino acid sequences and annotations; possibly redundant in both sequence and annotation">
+  <field name="id" type="integer" autoincrement="true" comment="Primary key; sequence generated integer" />
+  <field name="project_id" type="integer" not_null="true" comment="Foreign key to projects(id)" />
+  <field name="aseq_id" type="integer" not_null="true" comment="Foreign key to aseqs(id)" />
+  <field name="label" type="text" not_null="true" comment="Arbitrary user label" />
+  <primaryKey>id</primaryKey>
+  <foreignKey onUpdate="cascade" onDelete="cascade">
+    <srcFields>aseq_id</srcFields>
+    <refTable>aseqs</refTable>
+    <refFields>id</refFields>
+  </foreignKey>
+  <index name="amino_seqs_aseq_id_index">aseq_id</index>
+  <index name="amino_seqs_project_id_index">project_id</index>
+</table>

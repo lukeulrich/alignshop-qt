@@ -1,0 +1,28 @@
+-- This file contains variables values that should be present in an overall configuration panel/widget. The
+   configuration should also be split between user-configurable and internally configured settings. Finally, there
+   should application wide and per-file configuration settings.
+
+
+
+[User configuration options]
+o BLAST database
+  - Locations where BLAST database may be present
+o Location of custom executables (e.g. custom alignment tool)
+o Default Amino color scheme
+o Default Dna color scheme
+o MsaWindow
+  o Default to show/hide labels
+  o Default to show/hide logo
+o Default embed / link BLAST results
+o Logo graph everything
+
+o Default gap character: - or . for inserting
+
+[Internal configuration]
+o External tool paths:
+  - psiblast
+  - blastdbcmd
+  - makeblastdb
+  - clustalw
+
+o URLs for downloading preformatted nn-sec databases

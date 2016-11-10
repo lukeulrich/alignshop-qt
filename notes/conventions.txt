@@ -1,0 +1,50 @@
+-- Use meaningful variable names for method arguments and include the type as part of the name. The full type should be
+   spelled out except for the standard data types (unless the type is implicitly obvious). The names for these are
+   outlined below:
+
+   Type              Name
+   ----              ----
+   char              ch
+   int               i
+   char *            str
+
+-- Class structure
+
+   ** All methods should be alphabetized
+
+   <public>
+      constructors (copy constructor last)
+      destructor
+      public methods
+      reimplemented methods
+      operators
+      reimplemented operators
+      static methods
+      public members
+   <public slots>
+   <signals>
+   <protected>
+   <protected slots>
+   <private>
+      private methods
+      static private methods
+      private variables
+   <private slots>
+
+-- Include order
+
+   All Qt module names (e.g. QtCore, QtGui, QtSql, etc.) must be supplied when specifying a Qt class to utilize:
+
+   <QtCore/QString>
+   <QtGui/QFontMetrics>
+
+   o Local includes must include any path information before the final filename if it is not present in the current
+     directory. In other words, do not rely on the compiler include directories for locating the final file.
+
+   o All Qt includes appear first, and then the local includes and each is alphabetically organized
+
+-- NULL or 0?
+
+   >> Answer: Neither. Use nullptr defined as a static const int
+
+      static const int nullptr = 0;

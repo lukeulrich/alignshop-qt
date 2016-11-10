@@ -1,0 +1,52 @@
+<RCC>
+    <qresource prefix="/">
+        <file>icons/22x22/actions/edit-copy.png</file>
+        <file>icons/22x22/actions/edit-cut.png</file>
+        <file>icons/22x22/actions/edit-delete.png</file>
+        <file>icons/22x22/actions/edit-paste.png</file>
+        <file>icons/22x22/actions/edit-redo.png</file>
+        <file>icons/22x22/actions/edit-undo.png</file>
+        <file>icons/22x22/actions/document-open.png</file>
+        <file>icons/22x22/actions/document-save.png</file>
+        <file>icons/22x22/actions/document-save-as.png</file>
+        <file>icons/22x22/actions/edit-select-all.png</file>
+        <file>icons/22x22/actions/document-new.png</file>
+        <file>icons/22x22/actions/edit-find.png</file>
+        <file>icons/22x22/apps/help-browser.png</file>
+        <file>icons/22x22/apps/preferences-desktop-keyboard-shortcuts.png</file>
+        <file>icons/22x22/apps/utilities-system-monitor.png</file>
+        <file>icons/22x22/categories/preferences-system.png</file>
+        <file>icons/famfamfam/application_add.png</file>
+        <file>icons/famfamfam/book_open.png</file>
+        <file>icons/inkscape/22x22/document-export.png</file>
+        <file>icons/inkscape/22x22/document-import.png</file>
+        <file>icons/inkscape/22x22/document-new-project.png</file>
+        <file>icons/22x22/actions/exit.png</file>
+        <file>icons/22x22/places/folder.png</file>
+        <file>icons/mine/22x22/alignment-node.png</file>
+        <file>icons/mine/22x22/seq-node.png</file>
+        <file>icons/mine/22x22/subseq-node.png</file>
+        <file>icons/inkscape/22x22/document-new-group.png</file>
+        <file>icons/22x22/actions/process-stop.png</file>
+        <file>icons/mine/22x22/dna-grayscale.png</file>
+        <file>icons/mine/22x22/amino-color.png</file>
+        <file>icons/mine/22x22/amino-alignment-color.png</file>
+        <file>icons/mine/22x22/dna-alignment-grayscale.png</file>
+        <file>icons/mine/22x22/rna-alignment-grayscale.png</file>
+        <file>icons/mine/22x22/rna-stemloop-grayscale.png</file>
+        <file alias="TriangularError">icons/16x16/status/software-update-urgent.png</file>
+        <file>icons/logo/align_shop_logo_256.png</file>
+        <file>rebase/link_emboss_e</file>
+        <file>icons/16x16/actions/scroll_down.png</file>
+        <file>icons/16x16/actions/scroll_up.png</file>
+        <file>icons/16x16/actions/show_info.png</file>
+        <file>icons/16x16/actions/add.png</file>
+        <file>icons/16x16/actions/close_subtle.png</file>
+        <file>icons/16x16/actions/scroll_left.png</file>
+        <file>icons/16x16/actions/scroll_right.png</file>
+        <file>fonts/Cousine-Regular-Latin.ttf</file>
+        <file>icons/odd_size/sort_ascending.png</file>
+        <file>icons/odd_size/sort_descending.png</file>
+        <file>fonts/Cabin-Regular.otf</file>
+    </qresource>
+</RCC>

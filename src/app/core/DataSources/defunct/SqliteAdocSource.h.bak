@@ -1,0 +1,64 @@
+/****************************************************************************
+**
+** Copyright (C) 2011 Agile Genomics, LLC
+** All rights reserved.
+** Author: Luke Ulrich
+**
+****************************************************************************/
+
+#ifndef SQLITEADOCSOURCE_H
+#define SQLITEADOCSOURCE_H
+
+#include <QtCore/QHash>
+
+#include <QtSql/QSqlDatabase>
+#include <QtSql/QSqlQuery>
+
+#include "AbstractAdocSource.h"
+
+class SqliteAdocSource : public AbstractAdocSource
+{
+public:
+    // -------------------------------------------------------------------------------------------------
+    // Constructors and destructor
+    SqliteAdocSource();
+    ~SqliteAdocSource();
+
+
+    // -------------------------------------------------------------------------------------------------
+    // Public methods
+    virtual void begin();
+    void close();
+    bool createAndOpen(const QString &fileName);
+    virtual void end();
+    virtual void eraseAminoAnonSeqs(const QVector<int> &ids);
+    virtual void insertAminoAnonSeq(AnonSeqPod &anonSeqPod);
+    bool isOpen() const;
+    bool open(const QString &fileName);
+    virtual QVector<AnonSeqPod> readAminoAnonSeqs(const QVector<int> &ids);
+    virtual QVector<AnonSeqPod> readAminoAnonSeqsFromDigests(const QVector<QByteArray> &digests);
+    virtual QVector<AminoSeqRecordPod> readAminoSeqRecords(const QVector<int> &ids);
+    virtual QVector<CoilPod> readCoils(int aminoAnonSeqId, int maxStop);
+    virtual QVector<SegPod> readSegs(int aminoAnonSeqId, int maxStop);
+    virtual void saveAminoSeqRecords(QVector<AminoSeqRecordPod> &aminoSeqRecordPods);
+    virtual void saveCoils(int aminoAnonSeqId, QVector<CoilPod> &coilPods);
+    virtual void saveSegs(int aminoAnonSeqId, QVector<SegPod> &segPods);
+
+private:
+    void createTables() const;
+    QSqlDatabase database() const;
+    QSqlQuery getPreparedQuery(QString name, QString sql, bool forwardOnly = true);
+    bool isValidDatabase();
+    bool openOrCreate(const QString &fileName);
+
+    QString connectionName_;
+    QHash<QString, QSqlQuery> preparedQueries_;
+
+    static int connectionNumber_;
+
+#ifdef TESTING
+    friend class TestSqliteAdocSource;
+#endif
+};
+
+#endif // SQLITEADOCSOURCE_H

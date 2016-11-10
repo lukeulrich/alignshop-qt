@@ -1,0 +1,20 @@
+[12 July 2010]
+Bug:     Saving data file when there is no space left on /var will throw a DatabaseError when trying to start a transaction.
+Context: Gentoo Linux
+Fix:     Free-up hard drive space and try again
+Status:  Crashes program - need to implement user-friendly message
+
+[19 July 2010]
+Bug:     Q_ASSERT_X(sourceIndexMap_.contains(parentSourceIndex), "VaryingColumnProxyModel::parentMapFromSourceIndex", "Parent source index must be mapped before child index may be mapped");
+Context:
+    Root
+    |___ Group A (group)
+         |___ A.1 (group)
+              |___ A.1.1 (group)
+         |___ A.2 (group)
+              |___ LuxR (amino subseq)
+              |___ LuxN (amino subseq)
+              |___ Happy (group)
+Reproduce: Start program, double click A.2 in right hand pane, Select proteins from the view combo box
+Status: Closed
+Fix: Recursively call VaryingColumnProxyModel::parentMapFromSourceIndex(...) until all parents up to root have been mapped

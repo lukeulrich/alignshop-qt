@@ -1,0 +1,27 @@
+-- Useful websites:
+
+   Browser capabilities: http://caniuse.com/
+   HTML5 SSE: http://dsheiko.com/weblog/html5-and-server-sent-events
+   WOFF fonts: http://hacks.mozilla.org/2009/10/woff/
+   Place to find free fonts: http://www.fontsquirrel.com/fonts/list/style/Monospaced
+   Demonstrates how to accomplish the same thing with various javascript libraries for viewing similarities and
+   differences between them: https://github.com/addyosmani/todomvc
+
+-- Demos:
+
+   20 HTML5 Canvas applications: http://creativefan.com/20-shockingly-cool-html5-canvas-applications/
+   https://www.lucidchart.com/
+
+-- Javascript strings are immutable and there is no direct access to the memory. Therefore to perform mutations, a new
+   string must be constructed every time (perhaps not the case with typed arrays).
+
+   http://stackoverflow.com/questions/51185/are-javascript-strings-immutable-do-i-need-a-string-builder-in-js
+
+   https://developer.mozilla.org/en/JavaScript_typed_arrays
+
+-- To perform AlignShop style alignment modifications would need to use the slice and splice methods:
+
+   https://developer.mozilla.org/en/JavaScript/Reference/Global_Objects/Array/slice
+   https://developer.mozilla.org/en/JavaScript/Reference/Global_Objects/Array/splice
+
+   http://stackoverflow.com/questions/2243824/what-is-the-difference-between-string-slice-and-string-substring-in-javascript

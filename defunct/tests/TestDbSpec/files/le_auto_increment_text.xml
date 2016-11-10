@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<db_schema xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="db_schema.xsd">
+
+<version>0.1</version>
+<table name="data_tree" comment="MPTT compatible tree structure">
+  <field name="id" type="integer" autoincrement="true" comment="Primary key; sequence generated integer" />
+  <field name="type" type="text" autoincrement="true" not_null="true" comment="Node type. Constrained to specific types (see check below)" />
+  <field name="foreign_table" type="text" comment="Database table referred to by this record" />
+  <field name="fk_id" type="integer" comment="Foreign key to the referred table (non-enforced)" />
+  <field name="label" type="text" comment="Only valid for non-table entities (e.g. folders/groups)" />
+  <field name="lft" type="integer" not_null="true" comment="MPTT field" />
+  <field name="rgt" type="integer" not_null="true" comment="MPTT field" />
+  <primaryKey>id</primaryKey>
+  <foreignKey onUpdate="cascade" onDelete="cascade">
+    <srcFields>parent_id</srcFields>
+    <refTable>data_tree</refTable>
+    <refFields>id</refFields>
+  </foreignKey>
+  <check>type IN ('root', 'project', 'group', 'seqamino', 'seqdna', 'seqrna', 'subseqamino', 'subseqdna', 'subseqrna', 'msaamino', 'msadna', 'msarna', 'primer')</check>
+  <check>fk_id > 0</check>
+  <check>lft > 0</check>
+  <check>rgt > lft</check>
+</table>
+
+</db_schema>

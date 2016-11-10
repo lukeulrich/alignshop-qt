@@ -1,0 +1,416 @@
+[1 November 2010]
+-- Do not use setData with non-trivial processes (non-atomic updates); rather, utilize a separate controller that
+   somehow queues requests and then makes updates to the database itself and then the data itself updates the model
+   via dataChanged. update trickles upward from the model.
+
+   Make the data changes trickle upwards.
+
+-- Model resets tend to be very expensive esp with numerous intermediate proxy models
+
+>> Multithreading:
+
+[2 November 2010]
+-- Meta object (introspection) tips:
+
+Question: When do we have to use qRegisterMetaType?
+Question: When to Q_ENUMS vs Q_DECLARE_METATYPE
+Q: Why specify string (e.g. "Car") when using qRegisterMetaType
+Q: How to check if properly implemented custom implicity shared class
+
+   >> Always have to have Q_DECLARE_METATYPE for custom objects to be used by MOC. Put right after class in header file.
+
+-- After declaring a property, still need to define the actual methods. Settable properties should also be slots.
+
+-- Why properties? Use in designer, exported to variable for QtScript, enables the generic setProperty and property methods.
+
+   Exporting variables to QtScript is how properties are connected to javascript.
+
+-- USER property defines the default property to use when editing data (ie. spinbox, lineedit, etc.)
+
+-- QMetaObject::invokeMethod useful for:
+   1) Delayed initialization. Example: model and view, for instance when the view depends on the model actually existing.
+      Add to constructor.
+   2) Inter process communication: send string and then receiver would simply call invokeMethod
+
+**************************************
+>> QVariant and implicity sharing tips
+
+-- Converting custom type to/from QVariant:
+
+   QVariant v = QVariant::fromValue(myType);
+   if (v.canConvert<MyType>())
+       MyType type = qvariant_cast<MyType>(v);
+
+-- Comparison of custom type only compares via addresses.
+
+-- It is possible to serialize QVariant of custom types if stream operators are defined.
+
+**************************************
+>> Model view tips
+
+-- QAbstractItemModel should be an adapter to actual data storage. Intended to be pure interface to user data.
+
+Database <--> In-memory data storage <--> Model <--> View
+SQLite        TableModel
+
+**************************************
+>> Performance tips
+
+-- Use iterators for Qt containers, faster than for loop (because it does not have to utilize [])
+-- QImage
+   >> platform ind, system memory - so slow to render to screen; easy to manipulate; set pixels
+
+   QPixmap
+   >> lives in video memory, not able to set individual pixels; very fast to draw and bitmap is closer to hardware
+
+-- QNetworkAccessManager - very good to use for all things network related
+
+**************************************
+>> Miscellaneous
+
+-- qobject_cast<> is library safe dynamic cast; has to be qobject though; windows does not allow dynamic casts (for the most part)
+-- QComboBox has itemData method for getting more than string data
+
+-- Use private pointer to generated class
+
+-- QtConcurrent: parallel for loop
+
+#qt-creator irc.freenode.net
+
+>> The View
+o DontSavePainterState: between painting items. Usually, Qt will save painter state and then release after each item paints itself. So,
+  thus must be careful that all previous operation paints are desired.
+o GraphicsView has a cacheMode. CacheBackground or noCache. Stores pixmap of background in memory. So be careful that targetted platforms
+  have limited memory.
+o setViewport(new QGLWidget): rendering will go through GL widget which is the best performance.
+o setFrameStyle(0) if it is not needed (e.g. full screen game)
+o setAttribute(Qt::WA_Translucentbackground, false); if you dont want transparent
+o -grahpicssystem raster (def benefit for linux); can force option in main function if don't want to supply via command line
+o QGraphicsView::FullViewportUpdate: recommended for viewport like GLWidget. Why? doesn't support partial updates.
+  Default: BoundingRectViewportUpdate is the best for many cases.
+o If you know the area that the view should see, always call setSceneRect, so the framework does not calculate it (normally tries best width
+  that fits all items)
+o fitInView: cost of convenience. Beware of scaling factor close to 1. For example, scaling factor of .9, will hardly be visibly different
+  but everything will be scaled.
+
+>> The Scene
+o BSP index: lookup is fast, but moves are slow. Qt gets smart for animations by putting these into a separate list and does not re-insert
+  into BSP tree until animation is over.
+o When to use BSP and when not to: depends on the scene. BSP for static and populated scene. NoIndex for animated scene. It's a one line
+  change therefore just try it.
+o Custom indexing is virtually ready, he just has to make it public
+
+>> The rendering
+>> The items
+o QGraphicsObject is a QObject variant of QGraphicsItem (for properties and QObject facilities)
+o QGraphicsWidget has geometry concept and can be put into layouts
+
+o CacheModes: DeviceCoordinate / ItemCoordinate
+o First time item is painted, supplied painter is to pixmap which is stored on QPixmapCache
+
+o If item is untransformed do not need DeviceCoordinateCache; ItemCoordinateCache might look bad if transformed.
+
+DeviceCoordinateCache stores post-processed items, rather itemCoordinateCache stores untransformed representation. DeviceCoordinateCache
+may use much more memory depending on the scale (scale of 3x will reuqire that much more memory)
+
+o Third cacheMode: QGraphicsEffect renders subtree of items and then applies the blur. Previously, applied caching per item. Would be nice
+  to have subtree caching.
+  Use custom effect that just draws the pixmap syou get "sub-tree" caching
+  Drawback: always do full repaint on tree after update
+
+o ProxyWidget: tempting because can put QWidget inside of it
+  >> Slow because it uses ::render() and thus always does a full repaint
+  -- Use it if you have no other alternatives or time to write your own components.
+
+o Combine all setFlags into one call rather than many setFlag calls; because when you change an item it calls itemChanged which will
+  force many tree traversals
+o use itemHasNoContents if you item is a logical item - paint does nothing (for instance, parent items that merely group other items).
+o itemChanged call is unfortunately slow so avoid using it too much (with some flags like geometry and pos tracking)
+
+Lessons learned and the future
+o QGraphicsView is a good framework, can run quite fast on devices
+o Obviously, what you do in ::paint() influences performance significantly
+o Not graphic card friendly, most work is done on software side
+o Effects not fast enough
+o Making QWidget work on canvas helped many people but opened many issues
+o Make the expensive calculation on demand (e.g. all exposed rects)
+o QGraphicsItem should not be pure virtual
+o Multiple views really worth the price? It's a nice feature, but current implementation is not the best
+
+Future: How to make better use of the video card?
+Could we improve QGraphicsView without breaking the API? No.
+
+Because QML utilizes QGraphicsView, it is advisable to utilize it. This is more future proof allowing the developers to optimize the actual
+rendering.
+
+[3 November 2010]
+-- For hybrid application, need:
+
+   QT += webkit
+
+   QWebView webView;
+   weBview.show();
+
+**************************************************************
+** Bridging the gap between Webkit and C++ native applications No'am Rosenthal
+
+-- When to do this?
+
+   If you want the best UI -> use Qt Quick
+   If sharing the technology is more important, use QtWebkit
+
+   Use this technique when cost of maintaining more than one port of UI is more expensive than writing shared tech via QWebKit.
+
+**************************************************************
+** Qt Quick for C++ Developers
+
+-- QDeclarative module
+
+   QDeclarativeEngine: core of QML runtime, provides environment for QML components
+   QDeclarativeContext: provides a set of properties that can be accessed by name from QML
+   QDeclarativeview: QGraphicsview based widget that can be used to display QML interfaces
+
+-- The above are connected:
+
+   QDeclarativeView holds a QDeclarativeEngine which holds a QDeclarativeContext
+
+-- Must add declarative to QT variable in pro file
+
+-- QDeclarativeContext allows the application to expose data:
+
+   setContextproperty(name, value) - associate name <-> QVariant value / QObject
+   setContextObject(QObject *object) - expose all members of object
+
+   >> Context forms a hierarchy
+
+-- Custom C++ types
+
+   registered via: qmlRegisterType<T>(mod, ver, qmlName)
+
+   qmlRegisterType<Contact>("my", 1.0, "Contact")  Note, qmlName can be whatever
+
+   >> Constraints:
+      o C++ type must QObject derivative
+      o Must be QDeclarativeItem if to be drawn
+      o QAbstractItemModel
+      o Add properties using the Q_PROPERTY macro and the NOTIFY attribute
+        NOTIFY signal must be emitted any time the property changes. This is because QML property bindings are monitored by the qml enginee
+
+-- Methods marked as Q_INVOKABLE can be used as JS functions
+
+-- How to set JS variable from C++:
+
+   setContextProperty("message", ...) -> message is now accessible in QML
+
+   --> For some reason, must be QLatin1Strings (e.g. setContextProperty(QLatin1String("message")))
+
+-- QDeclarativeItem extends QGraphicsObject that defines properties common to all visual items (anchors, x, y, width, height)
+
+
+**************************************************************
+** Qt Networking Stack
+
+>> TCP/UDP sockets
+>> HTTP Stack
+
+-- QHttp is deprecated, use network access API
+
+-- QNetworkRequest -> QNetworkAccessManger -> QNetworkReady (these apply to other protocols than)
+
+-- QNetworkRequest
+
+   o URL
+   o HTTP headers
+   o SSL options
+
+   QNetworkAccessManager
+
+   o get(...), post(...), put(...) :: all asynchronous
+   o cookies, caching, proxy handling
+   o has a QNetworkCookieJar
+   o may have a cache, but not by default
+
+   QNetworkReady
+
+   All reported asynchronously
+   o reply data
+   o HTTP headers (signal: metadata changed)
+   o used SSL certs
+   o errors
+
+-- Advanced HTTP features
+
+>> Cookies
+
+   - QNetworkCookie has path, domain, and expiration date
+   - QNetworkCookieJar stores cookies locally; cookiesForUrl, setCookiesFromUrl
+
+>> Caching
+
+   QAbstractNetworkCache: insert(...), remove(...)
+   QNetworkDiskCache (isa QAbstractNetworkCache): cache directory and maximum size
+
+>> Proxies
+
+   QNetworkProxy (host name, type, capabilities (host name lookup))
+   QNetworkProxyFactory: proxyForQuery(query)
+
+>> SSL
+
+   QSslSocket not needed explicitly for HTTPS communication; connection manager deals with this
+   QSslCertificate (subject_info, issuer info, ...)
+   QSslError (error string)
+
+-- Recommended to utilize only one QNetworkAccessManager to share connections
+
+>> Web services with Qt
+
+   REST - URL style address for requests; use HTTP verbs to achieve a specific purpose
+   SOAP - specification, XML dialect that always use HTTP POST
+
+   What's possible now:
+
+   >> HTTP get/post/put/delete
+   >> authentication: basic/digest/NTLM
+   >> XML parsing (QMmlStreamReader, XPath with QXmlQuery)
+   >> JSON parsing (QScriptEngine - not ideal solution)
+
+   What is coming (4.8)
+   >> HTTP multipart messages
+   >> JSON
+   >> OAuth (hopefully)
+   >> Performance improvements
+
+
+**************************************************************
+** Measuring Qt performance
+
+4.7
+-- QML, Graphics, Qtwebkit, alien widgets, QStaticText, Updated JSC engine
+
+-- How to make things faster? First off: measure
+
+-- How to create our own traces, which can then be run through qtracebench
+
+   Simply add commandline argument: -graphicssystem trace
+
+   qtracebench: tests/benchmarks/gui/painting/qtracebench
+
+-- Benchmarking with QTestLib
+
+   o Only private slots run as test functions (by convention)
+
+   o New | New unit test
+
+   ** Side note: Q_SLOTS instead of "slots" keyword
+   o QBENCHMARK acts as a loop and try to find minimum number of iterations to apply to code and obtain meaningful result
+     By default, measures walltime in seconds. Add -help command line argument shows additional benchmark options (e.g. callgrind, etc.)
+     -median N; run benchmark N times and return median result
+   o After benchmark is ready, can run through profiler and see where time is spent in the code:
+
+     valgrind --tool=callgrind ./program
+     Open kCacheGrind, load callgrind.file
+
+
+**************************************************************
+** Performance - doing graphics the right way
+
+o BLOG article discussing this stuff: qt-graphics-and-performance-generating-content-in-threads
+
+>> Graphics systems (introduced in 4.5 "falcon" "make you fly")
+
+o Decides the type of pixmap and the type of window surface
+o Three ways to enable them:
+  1) app -graphicssystem raster
+  2) QT_GRAHPICSSYSTEM env variab
+  3) QApplication::setGraphicsSystem("raster")
+
+o Various paint engines
+  The good: OpenGL (main view), Raster (UI) - also works everywhere.
+  The other ones (less desirable): X11, CoreGraphics, DirectX/3D
+
+o OpenGL strengths:
+  - HW accel: anything that takes pixels is fast to draw
+  - gradients
+  - transformations, alpha blending, etc.
+
+o OpenGL weaknesses
+  - No high-quality antialiasing, requires multisampling
+  - Costly for "small" things
+  - No gamma correction for text (would reuqire reading pixels back in, tweaking, and sending back - very costly)
+
+o Raster strengths
+  - Pixel throughput = CPU hp (cache) / pixels
+  - Small fills; linearly slower with more pixels
+  - RGB16, RGB32, ARGB32_Premultiplied :: only formats that are fast. Any other format ~40x slower
+  - Pixel aligned rectangle clips are almost free; complex shape clips lose all optimizations
+  - Pixmap transformations except perspective
+  - State changes are cheap (e.g. brush changes - just updates a function pointer)
+
+o Raster weaknesses
+  - Any other format including ARGB32; when loading PNG file from disk it by default is ARGB32 (solution: first convert to pixmap
+    because pixmap always chooses best format)
+  - Dashed lines (not slow in GL)
+  - Antialiasing is X times slower
+  - Smooth pixmap transforms (solution: turn off AA and smooth transforms, render animation, and then render last frame full quality)
+  - Complex clipping
+
+** Aerial scaling vs bilinear scaling. When doing scaling from large image to small thumbnail, always use QImage::scaled because it will
+   do a aerial scale which properly accounts for all represented pixels
+
+>> Painting
+o Two primary rules:
+1) The greater the distance bewteen the draw calls the worse the performance will be. When drawing, you should only be drawing and nothing
+   else.
+   - Minimize state changes, clip, transform, while painting
+   - Do not do other stuff, e.g. document parsing
+   - Applies also to what the draw call implies
+   - Doing text - pixmap - text - pixmap means state changes. in OpenGL, drawing text and pixmaps utilizes different pipelines. Switching
+     back and forth causes these pipelines to be constructed/destructed too many times
+2) The feweer the draw calls, the better the performance
+   - Do not draw things that are not visible
+   - When possible, do multiple things in one call
+     > drawLines, drawRects, fillRect (stateless call - ie. does not require setBrush)
+   - Cache complex drawing in a pixmap **
+
+In 4.7, drawPixmapFragments(...)
+
+>> Text, glyphs, and "Layouting" them
+
+o QPainter::drawText() does complete layout every time; not drawing also increases chance of cache-miss
+o Previously, way to cache text was to utilize QTextLayout; unfortunately uses fair amount of memory (~250 bytes / character + 4k offset)
+  and is slightly tedious to use.
+o QStaticText (14 bytes / glyph + 50 bytes overhead)
+
+  textVar = QStaticText("sample text string");
+  painter->drawStaticText(textVar)
+
+  >> Picks up font an dtranfsormation from painter
+  >> Changes to these will cause re-layout
+
+>> Threading and Qt graphics
+
+o Why?
+  - Keep the GUI responsive
+  - Move heavy tasks off the main thread
+  - Image decoding
+  - Generation of scene tiles
+  - Rendering a webpage or document
+
+o Status for plain Qt
+  - QImage can be decoded , scaled, and transformed
+  - Draw to a QImage with QPainter
+  - Draw to QPixmap with Qpainter and raster grahpics system
+
+o Status for OpenGL
+  - Swapping buffers - blocks everything
+  - Texture uploading
+  - Raw GL into QGLPixelBuffer or QGLWidget
+  - Manual sync required
+
+o In 4.8
+  - Draw to QGLWidget in another thread using QPainter
+  - drawing to QGLFrameBufferObject using QPainter
+  - Manual sync required
+
+QImageReader.setScaledSize - saves memory during read

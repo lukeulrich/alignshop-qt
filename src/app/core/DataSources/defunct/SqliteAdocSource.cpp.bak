@@ -1,0 +1,649 @@
+#include "SqliteAdocSource.h"
+
+#include <QtCore/QFile>
+#include <QtCore/QFileInfo>
+#include <QtCore/QVariant>
+#include <QtDebug>
+#include <QtSql/QSqlError>
+
+#include "../macros.h"
+
+int SqliteAdocSource::connectionNumber_ = 1;
+
+// -------------------------------------------------------------------------------------------------
+// -------------------------------------------------------------------------------------------------
+// Constructors and destructor
+/**
+  */
+SqliteAdocSource::SqliteAdocSource() : AbstractAdocSource()
+{
+}
+
+/**
+  */
+SqliteAdocSource::~SqliteAdocSource()
+{
+    close();
+}
+
+
+// -------------------------------------------------------------------------------------------------
+// -------------------------------------------------------------------------------------------------
+// Public methods
+/**
+  */
+void SqliteAdocSource::begin()
+{
+    QSqlQuery query = getPreparedQuery("beginSavepoint",
+                                       "SAVEPOINT begin");
+
+    if (!query.exec())
+        throw 0;
+}
+
+/**
+  */
+void SqliteAdocSource::close()
+{
+    preparedQueries_.clear();
+    QSqlDatabase::removeDatabase(connectionName_);
+    connectionName_.clear();
+}
+
+/**
+  * @param fileName [const QString &]
+  * @returns bool
+  */
+bool SqliteAdocSource::createAndOpen(const QString &fileName)
+{
+    if (QFile::exists(fileName))
+        return false;
+
+    if (!openOrCreate(fileName))
+        return false;
+
+    // Now create the necessary database tables
+    createTables();
+
+    return true;
+}
+
+/**
+  */
+void SqliteAdocSource::end()
+{
+    QSqlQuery query = getPreparedQuery("commit",
+                                       "commit");
+
+    if (!query.exec())
+        throw 0;
+}
+
+/**
+  * @param ids [const QVector<int> &]
+  */
+void SqliteAdocSource::eraseAminoAnonSeqs(const QVector<int> &ids)
+{
+    QSqlQuery erase = getPreparedQuery("eraseAstring",
+                                       "DELETE FROM astrings "
+                                       "WHERE id = ?");
+
+    foreach (int id, ids)
+    {
+        erase.bindValue(0, id);
+        if (!erase.exec())
+            throw 0;
+    }
+
+    erase.finish();
+}
+
+/**
+  * @param anonSeqPod [AnonSeqPod &]
+  */
+void SqliteAdocSource::insertAminoAnonSeq(AnonSeqPod &anonSeqPod)
+{
+    ASSERT(anonSeqPod.id_ < 0);
+    ASSERT(anonSeqPod.digest_.isNull() == false);
+
+    QSqlQuery insert = getPreparedQuery("insertAstring",
+                                        "INSERT INTO astrings (digest, sequence) "
+                                        "VALUES (?, ?)");
+
+    insert.bindValue(0, anonSeqPod.digest_);
+    insert.bindValue(1, anonSeqPod.sequence_);
+    if (!insert.exec())
+        throw 0;
+
+    QVariant lastInsertId = insert.lastInsertId();
+    if (!lastInsertId.isValid())
+        throw 0;
+
+    anonSeqPod.id_ = lastInsertId.toInt();
+
+    insert.finish();
+}
+
+/**
+  * @returns bool
+  */
+bool SqliteAdocSource::isOpen() const
+{
+    return connectionName_.isEmpty() == false;
+}
+
+/**
+  * @param fileName [const QString &]
+  * @returns bool
+  */
+bool SqliteAdocSource::open(const QString &fileName)
+{
+    if (!QFile::exists(fileName))
+        return false;
+
+    if (!openOrCreate(fileName))
+        return false;
+
+    if (!isValidDatabase())
+    {
+        close();
+        return false;
+    }
+
+    return true;
+}
+
+/**
+  * @param ids [const QVector<int> &]
+  * @returns QVector<AnonSeqPod>
+  */
+QVector<AnonSeqPod> SqliteAdocSource::readAminoAnonSeqs(const QVector<int> &ids)
+{
+    QSqlQuery query = getPreparedQuery("readAstrings",
+                                        "SELECT id, sequence FROM astrings WHERE id = ?");
+
+    // --------------------------
+    // --------------------------
+    QVector<AnonSeqPod> pods;
+    pods.reserve(ids.size());
+    foreach (int id, ids)
+    {
+        query.bindValue(0, id);
+        if (!query.exec())
+            throw 0;
+
+        if (query.next())
+            pods << AnonSeqPod(query.value(0).toInt(), query.value(1).toByteArray());
+        else
+            pods << AnonSeqPod();
+    }
+    query.finish();
+
+    return pods;
+}
+
+/**
+  * @param digests [const QVector<QByteArray> &]
+  * @returns QVector<AnonSeqPod>
+  */
+QVector<AnonSeqPod> SqliteAdocSource::readAminoAnonSeqsFromDigests(const QVector<QByteArray> &digests)
+{
+    QSqlQuery query = getPreparedQuery("readAstringsByDigest",
+                                        "SELECT id, sequence FROM astrings WHERE digest = ?");
+
+    // --------------------------
+    // --------------------------
+    QVector<AnonSeqPod> pods;
+    pods.reserve(digests.size());
+    foreach (const QByteArray &digest, digests)
+    {
+        query.bindValue(0, QString(digest));
+        if (!query.exec())
+            throw 0;
+
+        if (query.next())
+            pods << AnonSeqPod(query.value(0).toInt(), query.value(1).toByteArray());
+        else
+            pods << AnonSeqPod();
+    }
+    query.finish();
+
+    return pods;
+}
+
+/**
+  * @param ids [const QVector<int> &]
+  * @returns QVector<AminoSeqRecordPod>
+  */
+QVector<AminoSeqRecordPod> SqliteAdocSource::readAminoSeqRecords(const QVector<int> &ids)
+{
+    QSqlQuery query = getPreparedQuery("readAminoSeqs",
+                                        "SELECT a.id, astring_id, start, stop, name, description "
+                                        "FROM amino_seqs a " // JOIN astrings b ON (a.astring_id = b.id) "
+                                        "WHERE a.id = ?"); //  AND "
+//                                            "    start > 0 AND "
+//                                            "    stop >= start AND "
+//                                            "    stop <= length(b.sequence);");
+
+    // --------------------------
+    // --------------------------
+    QVector<AminoSeqRecordPod> pods;
+    pods.reserve(ids.size());
+    foreach (int id, ids)
+    {
+        query.bindValue(0, id);
+        if (!query.exec())
+            throw 0;
+
+        if (query.next())
+        {
+            pods << AminoSeqRecordPod(query.value(0).toInt(),
+                                      query.value(1).toInt(),
+                                      query.value(2).toInt(),
+                                      query.value(3).toInt(),
+                                      query.value(4).toString(),
+                                      query.value(5).toString());
+        }
+        else
+            pods << AminoSeqRecordPod();
+    }
+
+    query.finish();
+
+    return pods;
+}
+
+/**
+  * @param aminoAnonSeqId [int]
+  * @param maxStop [int]
+  * @returns QVector<CoilPod>
+  */
+QVector<CoilPod> SqliteAdocSource::readCoils(int aminoAnonSeqId, int maxStop)
+{
+    ASSERT(maxStop > 0);
+    QSqlQuery query = getPreparedQuery("readCoils",
+                                        "SELECT id, start, stop "
+                                        "FROM coils "
+                                        "WHERE astring_id = ? AND start > 0 AND stop >= start AND stop <= ? " // Ensure they are in the proper range
+                                        "GROUP BY start, stop "    // Prevent duplicates
+                                        "ORDER BY start");
+
+    // --------------------------
+    // --------------------------
+    query.bindValue(0, aminoAnonSeqId);
+    query.bindValue(1, maxStop);
+    if (!query.exec())
+        throw 0;
+
+    QVector<CoilPod> coilPods;
+    while (query.next())
+        coilPods << CoilPod(query.value(0).toInt(), query.value(1).toInt(), query.value(2).toInt());
+
+    query.finish();
+
+    return coilPods;
+}
+
+/**
+  * @param aminoAnonSeqId [int]
+  * @param maxStop [int]
+  * @returns QVector<SegPod>
+  */
+QVector<SegPod> SqliteAdocSource::readSegs(int aminoAnonSeqId, int maxStop)
+{
+    ASSERT(maxStop > 0);
+    QSqlQuery query = getPreparedQuery("readSegs",
+                                        "SELECT id, start, stop "
+                                        "FROM segs "
+                                        "WHERE astring_id = ? AND start > 0 AND stop >= start AND stop <= ? " // Ensure they are in the proper range
+                                        "GROUP BY start, stop "    // Prevent duplicates
+                                        "ORDER BY start");
+
+    // --------------------------
+    // --------------------------
+    query.bindValue(0, aminoAnonSeqId);
+    query.bindValue(1, maxStop);
+    if (!query.exec())
+        throw 0;
+
+    QVector<SegPod> segPods;
+    while (query.next())
+        segPods << SegPod(query.value(0).toInt(), query.value(1).toInt(), query.value(2).toInt());
+
+    query.finish();
+
+    return segPods;
+}
+
+/**
+  * @param aminoSeqRecordPods [QVector<AminoSeqRecordPod> &]
+  */
+void SqliteAdocSource::saveAminoSeqRecords(QVector<AminoSeqRecordPod> &aminoSeqRecordPods)
+{
+    QSqlQuery update = getPreparedQuery("updateAminoSeqs",
+                                        "UPDATE amino_seqs "
+                                        "SET start = ?, stop = ?, name = ?, description = ? "
+                                         "WHERE id = ?");
+    QSqlQuery insert = getPreparedQuery("insertAminoSeq",
+                                        "INSERT INTO amino_seqs (astring_id, start, stop, name, description) "
+                                        "VALUES (?, ?, ?, ?, ?)");
+
+    QVector<AminoSeqRecordPod>::Iterator it = aminoSeqRecordPods.begin();
+    for (; it != aminoSeqRecordPods.end(); ++it)
+    {
+        AminoSeqRecordPod &pod = *it;
+        ASSERT(pod.id_ != 0);
+        ASSERT(pod.astringId_ > 0);
+        ASSERT(pod.start_ > 0);
+        ASSERT(pod.stop_ >= pod.start_);
+        if (pod.id_> 0)
+        {
+            // Update the record
+            update.bindValue(0, pod.start_);
+            update.bindValue(1, pod.stop_);
+            update.bindValue(2, pod.name_);
+            update.bindValue(3, pod.description_);
+            update.bindValue(4, pod.id_);
+            if (!update.exec())
+                throw 0;
+        }
+        else
+        {
+            // Insert the record and update the id
+            insert.bindValue(0, pod.astringId_);
+            insert.bindValue(1, pod.start_);
+            insert.bindValue(2, pod.stop_);
+            insert.bindValue(3, pod.name_);
+            insert.bindValue(4, pod.description_);
+            if (!insert.exec())
+                throw 0;
+
+            pod.id_ = insert.lastInsertId().toInt();
+        }
+    }
+
+    update.finish();
+    insert.finish();
+}
+
+/**
+  * @param aminoAnonSeqId [int]
+  * @param coilPods [QVector<CoilPod> &]
+  */
+void SqliteAdocSource::saveCoils(int aminoAnonSeqId, QVector<CoilPod> &coilPods)
+{
+    // Step A: Build list of ids to keep
+    QString validIds;
+    foreach (const CoilPod &coilPod, coilPods)
+    {
+        if (coilPod.id_ > 0)
+        {
+            if (!validIds.isEmpty())
+                validIds += QString(",%1").arg(coilPod.id_);
+            else
+                validIds = QString::number(coilPod.id_);
+        }
+    }
+
+    // Step B: Delete these sequences from the database that are not associated with this object
+    if (validIds.isEmpty() == false)
+    {
+        QSqlQuery query(database());
+        if (!query.exec(QString("DELETE FROM coils WHERE astring_id = %1 AND NOT id IN (%2)").arg(aminoAnonSeqId).arg(validIds)))
+            throw 0;
+    }
+    else
+    {
+        // Remove all coils
+        QSqlQuery query = getPreparedQuery("deleteCoilsForAstring",
+                                            "DELETE FROM coils WHERE astring_id = ?");
+
+        query.bindValue(0, aminoAnonSeqId);
+        if (!query.exec())
+            throw 0;
+    }
+
+    // Step C: Insert the new coil pods
+    QSqlQuery insert = getPreparedQuery("insertCoil",
+                                        "INSERT INTO coils (astring_id, start, stop) "
+                                        "VALUES (?, ?, ?)");
+
+    QVector<CoilPod>::Iterator it = coilPods.begin();
+    for (; it != coilPods.end(); ++it)
+    {
+        CoilPod &coilPod = *it;
+        if (coilPod.id_ != 0)
+            continue;
+
+        insert.bindValue(0, aminoAnonSeqId);
+        insert.bindValue(1, coilPod.start_);
+        insert.bindValue(2, coilPod.stop_);
+        if (!insert.exec())
+            throw 0;
+
+        QVariant lastInsertId = insert.lastInsertId();
+        if (lastInsertId.isValid() == false)
+            throw 0;
+
+        coilPod.id_ = lastInsertId.toInt();
+    }
+
+    insert.finish();
+}
+
+/**
+  * @param aminoAnonSeqId [int]
+  * @param segPods [QVector<SegPod> &]
+  */
+void SqliteAdocSource::saveSegs(int aminoAnonSeqId, QVector<SegPod> &segPods)
+{
+    // Step A: Build list of ids to keep
+    QString validIds;
+    foreach (const SegPod &segPod, segPods)
+    {
+        if (segPod.id_ > 0)
+        {
+            if (!validIds.isEmpty())
+                validIds += QString(",%1").arg(segPod.id_);
+            else
+                validIds = QString::number(segPod.id_);
+        }
+    }
+
+    // Step B: Delete these sequences from the database that are not associated with this object
+    if (validIds.isEmpty() == false)
+    {
+        QSqlQuery query(database());
+        if (!query.exec(QString("DELETE FROM segs WHERE astring_id = %1 AND NOT id IN (%2)").arg(aminoAnonSeqId).arg(validIds)))
+            throw 0;
+    }
+    else
+    {
+        // Remove all coils
+        QSqlQuery query = getPreparedQuery("deleteSegsForAstring",
+                                            "DELETE FROM segs WHERE astring_id = ?");
+
+        query.bindValue(0, aminoAnonSeqId);
+        if (!query.exec())
+            throw 0;
+    }
+
+    // Step C: Insert the new coil pods
+    QSqlQuery insert = getPreparedQuery("insertSeg",
+                                        "INSERT INTO segs(astring_id, start, stop) "
+                                        "VALUES (?, ?, ?)");
+
+    QVector<SegPod>::Iterator it = segPods.begin();
+    for (; it != segPods.end(); ++it)
+    {
+        SegPod &segPod = *it;
+        if (segPod.id_ != 0)
+            continue;
+
+        insert.bindValue(0, aminoAnonSeqId);
+        insert.bindValue(1, segPod.start_);
+        insert.bindValue(2, segPod.stop_);
+        if (!insert.exec())
+            throw 0;
+
+        QVariant lastInsertId = insert.lastInsertId();
+        if (lastInsertId.isValid() == false)
+            throw 0;
+
+        segPod.id_ = lastInsertId.toInt();
+    }
+
+    insert.finish();
+}
+
+
+// -------------------------------------------------------------------------------------------------
+// -------------------------------------------------------------------------------------------------
+// Private methods
+/**
+  */
+void SqliteAdocSource::createTables() const
+{
+    QSqlDatabase db = database();
+    QSqlQuery query(db);
+
+    // Initialize foreign keys
+    if (!query.exec("pragma foreign_keys = ON"))
+        throw;
+
+    // Table: astrings
+    if (!query.exec("CREATE TABLE astrings ("
+                    "    id integer not null primary key autoincrement,"
+                    "    digest text not null,"
+                    "    sequence text not null"
+                    ");"))
+        throw;
+
+    if (!query.exec("CREATE INDEX astrings_digest_index ON astrings(digest)"))
+        throw;
+
+    // Table: coils
+    if (!query.exec("CREATE TABLE coils ("
+                    "    id integer not null primary key autoincrement,"
+                    "    astring_id integer not null,"
+                    "    start integer not null,"
+                    "    stop integer not null,"
+                    "    check (start > 0),"
+                    "    check (stop >= start),"
+                    "    foreign key(astring_id) references astrings(id) on update cascade on delete cascade"
+                    ");"))
+        throw;
+
+    // Table: segs
+    if (!query.exec("CREATE TABLE segs ("
+                    "    id integer not null primary key autoincrement,"
+                    "    astring_id integer not null,"
+                    "    start integer not null,"
+                    "    stop integer not null,"
+                    "    check (start > 0),"
+                    "    check (stop >= start),"
+                    "    foreign key(astring_id) references astrings(id) on update cascade on delete cascade"
+                    ");"))
+        throw;
+
+    // Table: amino_seqs
+    if (!query.exec("CREATE TABLE amino_seqs ("
+                    "    id integer not null primary key autoincrement,"
+                    "    astring_id integer not null,"
+                    "    start integer not null,"       //
+                    "    stop integer not null,"
+                    "    name text,"
+                    "    description text,"
+                    "    foreign key(astring_id) references astrings(id) on update cascade on delete cascade"
+                    ");"))
+        throw;
+
+    if (!query.exec("CREATE TABLE amino_msas ("
+                    "    id integer not null primary key autoincrement,"
+                    "    name text not null,"
+                    "    description text"
+                    ");"))
+        throw;
+
+    if (!query.exec("CREATE TABLE amino_msas_members ("
+                    "    amino_msa_id integer not null,"
+                    "    amino_seq_id integer not null,"
+                    "    sequence text not null,"
+                    "    primary key(amino_msa_id, amino_seq_id),"
+                    "    foreign key(amino_msa_id) references amino_msas(id) on update cascade on delete cascade,"
+                    "    foreign key(amino_seq_id) references amino_seqs(id) on update cascade on delete cascade"
+                    ");"))
+        throw;
+}
+
+/**
+  * @returns QSqlDatabase
+  */
+QSqlDatabase SqliteAdocSource::database() const
+{
+    return QSqlDatabase::database(connectionName_, false);
+}
+
+/**
+  * @param name [QString]
+  * @param sql [QString]
+  * @param forwardOnly [bool]
+  * @returns QSqlQuery
+  */
+QSqlQuery SqliteAdocSource::getPreparedQuery(QString name, QString sql, bool forwardOnly)
+{
+    if (!preparedQueries_.contains(name))
+    {
+        QSqlQuery query = QSqlQuery(database());
+        if (!query.prepare(sql))
+        {
+            qDebug() << query.lastError().text();
+            throw 0;
+        }
+
+        query.setForwardOnly(forwardOnly);
+        preparedQueries_.insert(name, query);
+    }
+
+    return preparedQueries_.value(name);
+}
+
+/**
+  * @returns bool
+  */
+bool SqliteAdocSource::isValidDatabase()
+{
+    return true;
+}
+
+/**
+  * @param fileName [const QString &]
+  * @returns bool
+  */
+bool SqliteAdocSource::openOrCreate(const QString &fileName)
+{
+    // Close any open connection
+    if (connectionName_.isEmpty() == false)
+        close();
+
+    QString connectionName = QFileInfo(fileName).fileName() + QString::number(connectionNumber_);
+    bool opened = false;
+    {
+        // Hide the QSqlDatabase reference inside a code block so that we can remove it later if it failed to open
+        QSqlDatabase db = QSqlDatabase::addDatabase("QSQLITE", connectionName);
+        db.setDatabaseName(fileName);
+        opened = db.open();
+    }
+    if (!opened)
+    {
+        qDebug() << database().lastError().text();
+
+        QSqlDatabase::removeDatabase(connectionName);
+        return false;
+    }
+
+    connectionName_ = connectionName;
+    ++connectionNumber_;
+
+    return true;
+}

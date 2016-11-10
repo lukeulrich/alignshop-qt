@@ -1,0 +1,207 @@
+/****************************************************************************
+**
+** Copyright (C) 2011 Agile Genomics, LLC
+** All rights reserved.
+** Author: Luke Ulrich
+**
+****************************************************************************/
+
+#ifndef IADOCSOURCE_H
+#define IADOCSOURCE_H
+
+#include <QtCore/QByteArray>
+#include <QtCore/QVector>
+
+#include "../PODs/AnonSeqPod.h"
+#include "../PODs/AminoSeqRecordPod.h"
+#include "../PODs/CoilPod.h"
+#include "../PODs/SegPod.h"
+
+#include "../enums.h"
+
+#include "../util/ClosedIntRange.h"
+
+
+// ----------------------------------------------------------------------------
+// ----------------------------------------------------------------------------
+class IAdocSource
+{
+public:
+    virtual ~IAdocSource() {}
+
+    virtual void begin() = 0;
+    virtual void end() = 0;
+
+    virtual AnonSeqPod          readAnonSeq(int id, Grammar grammar) = 0;
+    virtual QVector<AnonSeqPod> readAnonSeqs(const QVector<int> &ids, Grammar grammar) = 0;
+    virtual AnonSeqPod          readAnonSeqFromDigest(const QByteArray &digest, Grammar grammar) = 0;
+    virtual QVector<AnonSeqPod> readAnonSeqsFromDigests(const QVector<QByteArray> &digests, Grammar grammar) = 0;
+
+
+
+    virtual AnonSeqPod          readAminoAnonSeq(int id) = 0;
+    virtual QVector<AnonSeqPod> readAminoAnonSeqs(const QVector<int> &ids) = 0;
+    virtual AnonSeqPod          readAminoAnonSeqFromDigest(const QByteArray &digest) = 0;
+    virtual QVector<AnonSeqPod> readAminoAnonSeqsFromDigests(const QVector<QByteArray> &digests) = 0;
+
+    // Note that the anonSeqPod here is modified - namely the ids are updated
+    // No vector version of insertion is provided here because it
+    virtual void insertAminoAnonSeq(AnonSeqPod &anonSeqPod) = 0;
+
+    virtual void eraseAminoAnonSeq(int id) = 0;
+    virtual void eraseAminoAnonSeqs(const QVector<int> &ids) = 0;
+
+    virtual QVector<CoilPod> readCoils(int aminoAnonSeqId, int maxStop) = 0;
+    virtual void saveCoils(int aminoAnonSeqId, QVector<CoilPod> &coilPods) = 0;
+
+    virtual QVector<SegPod> readSegs(int aminoAnonSeqId, int maxStop) = 0;
+    virtual void saveSegs(int aminoAnonSeqId, QVector<SegPod> &segPods) = 0;
+
+    virtual AminoSeqRecordPod readAminoSeqRecord(int id) = 0;
+    virtual QVector<AminoSeqRecordPod> readAminoSeqRecords(const QVector<int> &ids) = 0;
+
+
+
+    virtual void eraseAminoSeqRecord(int id) = 0;
+    virtual void eraseAminoSeqRecords(const QVector<int> &ids) = 0;
+
+    virtual void insertAminoSeqRecord(AminoSeqRecordPod &aminoSeqRecordPod) = 0;
+
+    virtual void saveAminoSeqRecord(AminoSeqRecordPod &aminoSeqRecordPod) = 0;
+    virtual void saveAminoSeqRecords(QVector<AminoSeqRecordPod> &aminoSeqRecordPods) = 0;
+
+    // TODO:
+    // virtual void eraseAminoSeqRecord(int id) = 0;
+    // virtual void eraseAminoSeqRecords(const QVector<int> &ids) = 0;
+
+
+    virtual void saveAstrings(const QVector<Astring *> &astrings) = 0;
+    virtual void eraseAstrings(const QVector<int> &ids) = 0;
+    virtual QVector<Astring *> readAstrings(const QVector<int> &ids) = 0;
+
+    virtual void saveAminoSeqs(const QVector<AminoSeq *> &aminoSeqs) = 0;
+    virtual void eraseAminoSeqs(const QVector<int> &ids) = 0;
+
+    // Convenience method to provide a single point of access for templated generics!
+    IEntityCrud<Astring> *crud(Astring *) = 0;
+    IEntityCrud<AminoSeq> *crud(AminoSeq *) = 0;
+
+    IEntityCrud<Astring> *astringCrud() = 0;
+    IEntityCrud<AminoSeq> *aminoSeqCrud() = 0;
+
+protected:
+    IAdocSource() {}
+};
+
+class IDbAdocSource : public IAdocSource
+{
+public:
+    QSqlDatabase database() = 0;
+};
+
+class SqliteAdocSource : public IDbAdocSource
+{
+public:
+    SqliteAdocSource() : astringCrud_(this), aminoSeqCrud_(this)
+    {
+    }
+
+    IEntityCrud<Astring> *astringCrud()
+    {
+        return astringCrud_;
+    }
+    IEntityCrud<AminoSeq> *aminoSeqCrud()
+    {
+        return aminoSeqCrud_;
+    }
+
+private:
+    DbAstringCrud astringCrud_;
+    DbAminoSeqCrud aminoSeqCrud_:
+};
+
+// Build/save core entity and its value objects. Ignore related entities
+template<typename T>
+class IEntityCrud
+{
+public:
+    virtual void save(const QVector<T *> &entities) = 0;
+    virtual void erase(const QVector<int> &ids) = 0;
+    virtual QVector<T *> read(const QVector<int> &ids) = 0;
+};
+
+template<typename T>
+class DbEntityCrud : public IEntityCrud<T>
+{
+protected:
+    DbEntityCrud(IDbAdocSource *dbAdocSource);
+    QSqlQuery getPreparedQuery(const QString &name, const QString &sql, bool forwardOnly = true);
+
+private:
+    IDbAdocSource *dbAdocSource_;
+};
+
+class DbAstringCrud : public DbEntityCrud<Astring>
+{
+public:
+    AstringCrud(IDbAdocSource *dbAdocSource): DbEntityCrud(dbAdocSource)
+    {
+    }
+
+    virtual void save(const QVector<Astring *> &astrings)
+    {
+        QSqlQuery insert = getPreparedQuery("astringInsert",
+                                            "INSERT INTO astrings (digest, length, sequence) "
+                                            "VALUES (?, ?, ?)");
+
+        QSqlQuery update = 3; // ...
+
+        // Iterate through astrings and save to the database
+    }
+
+    virtual QVector<Astring *> read(const QVector<int> &ids)
+    {
+        // Gather the base information
+        QSqlQuery readAstring = getPreparedQuery("readAstring",
+                                                 "SELECT id, sequence "
+                                                 "FROM astrings "
+                                                 "WHERE id = ?");
+
+        QSqlQuery readCoils = getPreparedQuery("readCoils",
+                                               "SELECT id, start, stop "
+                                               "FROM coils "
+                                               "WHERE astring_id = ? AND stop <= ?");   // Add other constraints for completeness sake
+
+        QVector<Astring *> astrings;
+        foreach (int id, ids)
+        {
+            readAstring.bindValue(0, id);
+            if (!readAstring.exec())
+            {
+                qDeleteAll(astrings);
+                throw 0;
+            }
+
+            if (!readAstring.next())
+                astrings << nullptr;
+
+            astrings << new Astring(readAstring.value(0).toInt(), Seq(readAstring.value(1).toByteArray(), eAminoGrammar));
+
+            // Attempt to read the coils
+            readCoils.bindValue(0, astrings.last()->id());
+            readCoils.bindValue(1, astrings.last()->seq_.length());
+            if (!readCoils.exec())
+            {
+                qDeleteAll(astrings);
+                throw 0;
+            }
+
+            while (readCoils.next())
+                astrings.last().addCoil(readCoils.value(0).toInt(), ClosedIntRange(readCoils.value(1).toInt(), readCoils.value(2).toInt()));
+        }
+
+        return astrings;
+    }
+}
+
+#endif // IADOCSOURCE_H

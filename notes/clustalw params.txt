@@ -1,0 +1,67 @@
+-QUICKTREE   :use FAST algorithm for the alignment guide tree
+-OUTORDER=   :INPUT or ALIGNED
+
+<Group>
+***Fast Pairwise Alignments:***
+-KTUPLE=n    :word size                 d: 1
+-TOPDIAGS=n  :number of best diags.     d: 5
+-WINDOW=n    :window around best diags. d: 5
+-PAIRGAP=n   :gap penalty               d: 3
+-SCORE       :PERCENT or ABSOLUTE
+
+***Slow Pairwise Alignments:*** (default)
+-PWMATRIX=    :Protein weight matrix=BLOSUM, PAM, GONNET, ID or filename d: GONNET
+-PWDNAMATRIX= :DNA weight matrix=IUB, CLUSTALW or filename 				 d: IUB
+-PWGAPOPEN=f  :gap opening penalty    d: 10    
+-PWGAPEXT=f   :gap opening penalty    d: .1
+</Group>
+
+
+<Group: "Multiple Alignment Parameters">
+  <Group>
+  -GAPOPEN=f     :gap opening penalty            d: 10        
+  -GAPEXT=f      :gap extension penalty          d: .2
+  -MAXDIV=n      :% ident. for delay             d: 30%
+  </Group>
+
+  <Group - DNA only>
+  -TRANSWEIGHT=f :transitions weighting d: .5
+  -DNAMATRIX=    :DNA weight matrix=IUB, CLUSTALW or filename d: IUB
+  </Group>
+
+  <Group - Protein only>
+  -MATRIX=       :Protein weight matrix=BLOSUM, PAM, GONNET, ID or filename  d: GONNET
+  -NEGATIVE      :protein alignment with negative values in matrix     d: false
+  </Group>
+
+  <Group>
+  -ITERATION=    :NONE or TREE or ALIGNMENT   (tree = "iterates each profile alignment step", alignment = "iterates final alignment only") d: NONE
+  -NUMITER=n     :maximum number of iterations to perform (default 3)
+  -NOWEIGHTS     :disable sequence weighting
+  </Group>
+</Group>
+
+<Group: "Protein Gap Parameters">
+  <Group>
+  -NOPGAP        :residue-specific gaps off      d: false ("Toggle Residue-Specific Penalties", default is on, which means this should be false)
+  </Group>
+
+  <Group>
+  -NOHGAP        :hydrophilic gaps off           d: false ("Toggle Hydrophilic Penalties", default is on, which means this should be false)
+  -HGAPRESIDUES= :list hydrophilic res.          d: GPSNDQEKR
+  </Group>
+
+  <Group>
+  -ENDGAPS       :no end gap separation pen.     d: false ("Toggle End Gap Separation")
+  -GAPDIST=n     :gap separation pen. range      d: 4 ("Gap Separation Distance")
+  </Group>
+</Group>
+
+
+
+<Group: trees>
+-KIMURA        :use Kimura's correction.         d: true - "Correct for multiple substitutions" 
+-TOSSGAPS      :ignore positions with gaps.      d: false
+-CLUSTERING=   :NJ or UPGMA  d: NJ
+</Group>
+

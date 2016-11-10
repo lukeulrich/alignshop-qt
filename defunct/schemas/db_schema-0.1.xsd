@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="utf8" ?>
+
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+		   elementFormDefault="qualified">
+
+<xs:simpleType name="notEmptyString">
+  <xs:restriction base="xs:token">
+	<xs:minLength value="1" />
+  </xs:restriction>
+</xs:simpleType>
+
+<xs:simpleType name="validTableName">
+  <xs:restriction base="xs:token">
+	<xs:pattern value="[A-Za-z_][A-Za-z0-9_]*" />
+  </xs:restriction>
+</xs:simpleType>
+
+<xs:simpleType name="validFieldName">
+  <xs:restriction base="xs:token">
+	<xs:pattern value="[A-Za-z_][A-Za-z0-9_]*" />
+  </xs:restriction>
+</xs:simpleType>
+
+<xs:simpleType name="validIndexName">
+  <xs:restriction base="xs:token">
+	<xs:pattern value="[A-Za-z_][A-Za-z0-9_]*" />
+  </xs:restriction>
+</xs:simpleType>
+
+<xs:simpleType name="validFieldType">
+  <xs:restriction base="xs:token">
+	<xs:enumeration value="integer" />
+	<xs:enumeration value="integer unsigned" />
+	<xs:enumeration value="int" />
+	<xs:enumeration value="text" />
+	<xs:enumeration value="real" />
+	<xs:enumeration value="blob" />
+  </xs:restriction>
+</xs:simpleType>
+
+<xs:simpleType name="fieldNameList">
+  <xs:restriction base="xs:token">
+        <xs:pattern value="[A-Za-z_][A-Za-z0-9_]*\s*(,\s*[A-Za-z_][A-Za-z0-9_]*\s*){0,}" />
+  </xs:restriction>
+</xs:simpleType>
+
+<xs:simpleType name="foreignKeyOption">
+  <xs:restriction base="xs:token">
+	<xs:enumeration value="cascade" />
+	<xs:enumeration value="restrict" />
+	<xs:enumeration value="set null" />
+  </xs:restriction>
+</xs:simpleType>
+
+<xs:element name="db_schema"><xs:complexType>
+<xs:sequence>
+
+<!-- ************************************************** -->
+<!-- version -->
+	  <xs:element name="version" type="notEmptyString" />
+
+<!-- ************************************************** -->
+<!-- table -->
+	  <xs:element name="table" maxOccurs="unbounded"><xs:complexType>
+	  <xs:sequence>
+		<xs:element name="field" maxOccurs="unbounded"><xs:complexType>
+		  <xs:sequence />
+		  <!-- field attributes -->
+		  <xs:attribute name="name" type="validFieldName" use="required" />
+		  <xs:attribute name="type" type="validFieldType" use="required" />
+		  <xs:attribute name="not_null" type="xs:boolean" default="false" />
+		  <xs:attribute name="autoincrement" type="xs:boolean" />
+		  <xs:attribute name="comment" type="notEmptyString" />
+		</xs:complexType></xs:element>
+
+	 	<xs:element name="primaryKey" type="fieldNameList" minOccurs="0" />
+
+		<xs:element name="foreignKey" minOccurs="0" maxOccurs="unbounded"><xs:complexType>
+		  <xs:sequence>
+			<xs:element name="srcFields" type="fieldNameList" />
+			<xs:element name="refTable" type="validTableName" />
+			<xs:element name="refFields" type="fieldNameList" />
+		  </xs:sequence>
+		  <!-- foreignKey attributes -->
+		  <xs:attribute name="onUpdate" type="foreignKeyOption" default="cascade" />
+		  <xs:attribute name="onDelete" type="foreignKeyOption" default="cascade" />
+		</xs:complexType></xs:element>
+
+		<xs:element name="check" type="xs:token" minOccurs="0" maxOccurs="unbounded" />
+
+		<xs:element name="index" minOccurs="0" maxOccurs="unbounded"><xs:complexType>
+		  <xs:simpleContent>
+		    <xs:extension base="fieldNameList">
+		      <xs:attribute name="name" type="validIndexName" use="required" />
+		    </xs:extension>
+		  </xs:simpleContent>
+		  <!-- index attributes -->
+		</xs:complexType></xs:element>
+
+	  </xs:sequence>
+	  <!-- table attributes -->
+	  <xs:attribute name="name" type="validTableName" use="required" />
+	  <xs:attribute name="comment" type="notEmptyString" />
+	  </xs:complexType></xs:element>
+
+
+<!-- ************************************************** -->
+<!-- pragmas -->
+	  <xs:element name="pragma" type="xs:token" minOccurs="0" maxOccurs="unbounded" />
+
+
+<!-- ************************************************** -->
+<!-- queries -->
+	  <xs:element name="query" minOccurs="0" maxOccurs="unbounded"><xs:complexType>
+		<xs:sequence>
+		  <xs:element name="sql" type="xs:token" maxOccurs="unbounded" />
+		  <xs:element name="comment" type="xs:token" minOccurs="0" />
+		</xs:sequence>
+		<xs:attribute name="name" type="xs:token" use="required" />
+	  </xs:complexType></xs:element>
+
+</xs:sequence>
+</xs:complexType></xs:element>
+
+
+</xs:schema>

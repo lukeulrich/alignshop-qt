@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>PrimersViewTab</class>
+ <widget class="QWidget" name="PrimersViewTab">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>877</width>
+    <height>300</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Form</string>
+  </property>
+  <layout class="QVBoxLayout" name="verticalLayout">
+   <property name="spacing">
+    <number>0</number>
+   </property>
+   <property name="margin">
+    <number>0</number>
+   </property>
+   <item>
+    <widget class="QToolBar" name="toolBar">
+     <property name="toolButtonStyle">
+      <enum>Qt::ToolButtonTextBesideIcon</enum>
+     </property>
+     <property name="floatable">
+      <bool>false</bool>
+     </property>
+     <addaction name="actionPrimerWizard"/>
+     <addaction name="actionManualPrimerInput"/>
+     <addaction name="actionSearchInfo"/>
+    </widget>
+   </item>
+   <item>
+    <widget class="QTableView" name="primersTableView">
+     <property name="alternatingRowColors">
+      <bool>true</bool>
+     </property>
+     <property name="selectionBehavior">
+      <enum>QAbstractItemView::SelectItems</enum>
+     </property>
+     <property name="verticalScrollMode">
+      <enum>QAbstractItemView::ScrollPerPixel</enum>
+     </property>
+     <property name="horizontalScrollMode">
+      <enum>QAbstractItemView::ScrollPerPixel</enum>
+     </property>
+     <property name="showGrid">
+      <bool>false</bool>
+     </property>
+     <property name="sortingEnabled">
+      <bool>true</bool>
+     </property>
+     <attribute name="horizontalHeaderHighlightSections">
+      <bool>false</bool>
+     </attribute>
+     <attribute name="horizontalHeaderStretchLastSection">
+      <bool>true</bool>
+     </attribute>
+     <attribute name="verticalHeaderVisible">
+      <bool>false</bool>
+     </attribute>
+     <attribute name="verticalHeaderDefaultSectionSize">
+      <number>22</number>
+     </attribute>
+     <attribute name="verticalHeaderHighlightSections">
+      <bool>false</bool>
+     </attribute>
+    </widget>
+   </item>
+  </layout>
+  <action name="actionPrimerWizard">
+   <property name="icon">
+    <iconset resource="../../../resources.qrc">
+     <normaloff>:/resources/images/icons/oxygen/actions/tools-wizard.png</normaloff>:/resources/images/icons/oxygen/actions/tools-wizard.png</iconset>
+   </property>
+   <property name="text">
+    <string>Primer Wizard</string>
+   </property>
+   <property name="toolTip">
+    <string>New Primer Wizard: find primers matching the target DNA sequence</string>
+   </property>
+  </action>
+  <action name="actionManualPrimerInput">
+   <property name="icon">
+    <iconset resource="../../../resources.qrc">
+     <normaloff>:/aliases/images/icons/okteta</normaloff>:/aliases/images/icons/okteta</iconset>
+   </property>
+   <property name="text">
+    <string>New Primer</string>
+   </property>
+   <property name="toolTip">
+    <string>New Primer</string>
+   </property>
+  </action>
+  <action name="actionDeletePrimers">
+   <property name="icon">
+    <iconset resource="../../../resources.qrc">
+     <normaloff>:/resources/images/icons/seanau/Remove circle.png</normaloff>:/resources/images/icons/seanau/Remove circle.png</iconset>
+   </property>
+   <property name="text">
+    <string>Delete Primers</string>
+   </property>
+   <property name="toolTip">
+    <string>Delete selected primers</string>
+   </property>
+  </action>
+  <action name="actionSearchInfo">
+   <property name="icon">
+    <iconset resource="../../../resources.qrc">
+     <normaloff>:/resources/images/icons/seanau/Information-B.png</normaloff>:/resources/images/icons/seanau/Information-B.png</iconset>
+   </property>
+   <property name="text">
+    <string>Search Info</string>
+   </property>
+   <property name="toolTip">
+    <string>Display search parameters</string>
+   </property>
+  </action>
+ </widget>
+ <resources>
+  <include location="../../../resources.qrc"/>
+ </resources>
+ <connections/>
+</ui>

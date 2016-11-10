@@ -1,0 +1,32 @@
+/****************************************************************************
+**
+** Copyright (C) 2010 Agile Genomics, LLC
+** All rights reserved.
+** Primary author: Luke Ulrich
+**
+****************************************************************************/
+
+#include "MpttNode.h"
+
+// ------------------------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
+// Global functions
+/**
+  * @param mpttNodeList [const QVector<MpttNode> &]
+  */
+template<typename T>
+void freeMpttTreeNodes(QVector<MpttNode<T> > &mpttNodeVector)
+{
+    typename QVector<MpttNode<T> >::Iterator it = mpttNodeVector.begin();
+    while (it != mpttNodeVector.end())
+    {
+        MpttNode<T> &mpttNode = *it;
+        if (mpttNode.treeNode_ != nullptr)
+        {
+            delete mpttNode.treeNode_;
+            mpttNode.treeNode_ = nullptr;
+        }
+
+        ++it;
+    }
+}

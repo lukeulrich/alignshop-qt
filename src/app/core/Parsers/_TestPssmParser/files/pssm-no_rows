@@ -1,0 +1,10 @@
+# AG-PSSM - last position-specific scoring matrix computed
+# PSI_SCALE_FACTOR:200
+
+              A     R     N     D     C     Q
+
+                      K         Lambda
+Standard Ungapped    0.1387     0.3183
+Standard Gapped      0.0410     0.2670
+PSI Ungapped         0.1387     0.3183
+PSI Gapped           0.0410     0.2670

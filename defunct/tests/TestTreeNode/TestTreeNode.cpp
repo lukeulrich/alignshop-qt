@@ -1,0 +1,551 @@
+/****************************************************************************
+**
+** Copyright (C) 2010 Agile Genomics, LLC
+** All rights reserved.
+** Primary author: Luke Ulrich
+**
+****************************************************************************/
+
+#include <QtTest/QtTest>
+
+#include "TreeNode.h"
+
+class TestTreeNode : public QObject
+{
+    Q_OBJECT
+
+private slots:
+    // ------------------------------------------------------------------------------------------------
+    // Constructors
+    void constructor();
+    void copyConstructor();
+
+    // ------------------------------------------------------------------------------------------------
+    // Public methods
+    void childAt();
+    void childrenBetween();
+    void childCount();
+    void isDescendantOf();
+    void parent();
+    void row();
+    void removeChildAt();
+    void removeChildren();
+    void appendChild();
+    void appendChildren();
+    void insertChildAt();
+    void takeChildren();
+};
+
+
+// ------------------------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
+// Constructors
+void TestTreeNode::constructor()
+{
+    TreeNode *root = new TreeNode();
+    QVERIFY(root->parent() == 0);
+
+    delete root;
+}
+
+void TestTreeNode::copyConstructor()
+{
+    TreeNode *root = new TreeNode();
+    TreeNode *child = new TreeNode();
+    TreeNode *child2 = new TreeNode();
+    TreeNode *child3 = new TreeNode();
+
+    root->appendChild(child);
+    root->appendChild(child2);
+    root->appendChild(child3);
+
+    TreeNode *rootCopy = new TreeNode(*root);
+    QVERIFY(rootCopy->childCount() == 0);
+    QVERIFY(rootCopy->parent() == 0);
+
+    TreeNode *childCopy = new TreeNode(*child);
+    QVERIFY(childCopy->childCount() == 0);
+    QVERIFY(childCopy->parent() == 0);
+
+    delete root;
+    root = 0;
+    child = 0;
+    child2 = 0;
+    child3 = 0;
+
+    delete rootCopy;
+    rootCopy = 0;
+    delete childCopy;
+    childCopy = 0;
+}
+
+void TestTreeNode::childAt()
+{
+    TreeNode *root = new TreeNode();
+    TreeNode *child = new TreeNode();
+    TreeNode *child2 = new TreeNode();
+    TreeNode *child3 = new TreeNode();
+
+    root->appendChild(child);
+    root->appendChild(child2);
+    root->appendChild(child3);
+
+    QVERIFY(root->childAt(0) == child);
+    QVERIFY(root->childAt(1) == child2);
+    QVERIFY(root->childAt(2) == child3);
+
+    delete root;
+    root = 0;
+    child = 0;
+    child2 = 0;
+    child3 = 0;
+}
+
+void TestTreeNode::childrenBetween()
+{
+    TreeNode *root = new TreeNode();
+    TreeNode *child = new TreeNode();
+    TreeNode *child2 = new TreeNode();
+    TreeNode *child3 = new TreeNode();
+
+    root->appendChild(child);
+    root->appendChild(child2);
+    root->appendChild(child3);
+
+    QList<TreeNode *> result;
+    result = root->childrenBetween(0, 0);
+    QCOMPARE(result.count(), 1);
+    QCOMPARE(result.at(0), child);
+
+    result = root->childrenBetween(1, 2);
+    QCOMPARE(result.count(), 2);
+    QCOMPARE(result.at(0), child2);
+    QCOMPARE(result.at(1), child3);
+
+    delete root;
+    root = 0;
+    child = 0;
+    child2 = 0;
+    child3 = 0;
+}
+
+void TestTreeNode::childCount()
+{
+    TreeNode *root = new TreeNode();
+    TreeNode *child = new TreeNode();
+    TreeNode *child2 = new TreeNode();
+    TreeNode *child3 = new TreeNode();
+
+    root->appendChild(child);
+    root->appendChild(child2);
+    root->appendChild(child3);
+
+    QVERIFY(root->childCount() == 3);
+    QVERIFY(child->childCount() == 0);
+    QVERIFY(child2->childCount() == 0);
+    QVERIFY(child3->childCount() == 0);
+
+    delete root;
+    root = 0;
+    child = 0;
+    child2 = 0;
+    child3 = 0;
+}
+
+void TestTreeNode::isDescendantOf()
+{
+    TreeNode *root = new TreeNode();
+    TreeNode *child1 = new TreeNode();
+    TreeNode *child11 = new TreeNode();
+    TreeNode *child12 = new TreeNode();
+    TreeNode *child2 = new TreeNode();
+    TreeNode *child21 = new TreeNode();
+    TreeNode *child211 = new TreeNode();
+
+    root->appendChild(child1);
+    child1->appendChild(child11);
+    child1->appendChild(child12);
+    root->appendChild(child2);
+    child2->appendChild(child21);
+    child21->appendChild(child211);
+
+    // None can be descendant of zero
+    QVERIFY(root->isDescendantOf(0) == false);
+    QVERIFY(child1->isDescendantOf(0) == false);
+    QVERIFY(child11->isDescendantOf(0) == false);
+    QVERIFY(child12->isDescendantOf(0) == false);
+    QVERIFY(child2->isDescendantOf(0) == false);
+    QVERIFY(child21->isDescendantOf(0) == false);
+    QVERIFY(child211->isDescendantOf(0) == false);
+
+    // Test: isolated node
+    TreeNode *soloNode = new TreeNode();
+    QVERIFY(root->isDescendantOf(soloNode) == false);
+    QVERIFY(child1->isDescendantOf(soloNode) == false);
+    QVERIFY(child11->isDescendantOf(soloNode) == false);
+    QVERIFY(child12->isDescendantOf(soloNode) == false);
+    QVERIFY(child2->isDescendantOf(soloNode) == false);
+    QVERIFY(child21->isDescendantOf(soloNode) == false);
+    QVERIFY(child211->isDescendantOf(soloNode) == false);
+    delete soloNode;
+    soloNode = 0;
+
+    // None can be a descendant of itself
+    QVERIFY(root->isDescendantOf(root) == false);
+    QVERIFY(child1->isDescendantOf(child1) == false);
+    QVERIFY(child11->isDescendantOf(child11) == false);
+    QVERIFY(child12->isDescendantOf(child12) == false);
+    QVERIFY(child2->isDescendantOf(child2) == false);
+    QVERIFY(child21->isDescendantOf(child21) == false);
+    QVERIFY(child211->isDescendantOf(child211) == false);
+
+    // Root
+    QVERIFY(root->isDescendantOf(child1) == false);
+    QVERIFY(root->isDescendantOf(child11) == false);
+    QVERIFY(root->isDescendantOf(child12) == false);
+    QVERIFY(root->isDescendantOf(child2) == false);
+    QVERIFY(root->isDescendantOf(child21) == false);
+    QVERIFY(root->isDescendantOf(child211) == false);
+
+    // Child1
+    QVERIFY(child1->isDescendantOf(root));
+    QVERIFY(child1->isDescendantOf(child11) == false);
+    QVERIFY(child1->isDescendantOf(child12) == false);
+    QVERIFY(child1->isDescendantOf(child2) == false);
+    QVERIFY(child1->isDescendantOf(child21) == false);
+    QVERIFY(child1->isDescendantOf(child211) == false);
+
+    // Child11
+    QVERIFY(child11->isDescendantOf(root));
+    QVERIFY(child11->isDescendantOf(child1));
+    QVERIFY(child11->isDescendantOf(child12) == false);
+    QVERIFY(child11->isDescendantOf(child2) == false);
+    QVERIFY(child11->isDescendantOf(child21) == false);
+    QVERIFY(child11->isDescendantOf(child211) == false);
+
+    // Child12
+    QVERIFY(child12->isDescendantOf(root));
+    QVERIFY(child12->isDescendantOf(child1));
+    QVERIFY(child12->isDescendantOf(child11) == false);
+    QVERIFY(child12->isDescendantOf(child2) == false);
+    QVERIFY(child12->isDescendantOf(child21) == false);
+    QVERIFY(child12->isDescendantOf(child211) == false);
+
+    // Child2
+    QVERIFY(child2->isDescendantOf(root));
+    QVERIFY(child2->isDescendantOf(child1) == false);
+    QVERIFY(child2->isDescendantOf(child11) == false);
+    QVERIFY(child2->isDescendantOf(child12) == false);
+    QVERIFY(child2->isDescendantOf(child21) == false);
+    QVERIFY(child2->isDescendantOf(child211) == false);
+
+    // Child21
+    QVERIFY(child21->isDescendantOf(root));
+    QVERIFY(child21->isDescendantOf(child1) == false);
+    QVERIFY(child21->isDescendantOf(child11) == false);
+    QVERIFY(child21->isDescendantOf(child12) == false);
+    QVERIFY(child21->isDescendantOf(child2));
+    QVERIFY(child21->isDescendantOf(child211) == false);
+
+    // Child211
+    QVERIFY(child211->isDescendantOf(root));
+    QVERIFY(child211->isDescendantOf(child1) == false);
+    QVERIFY(child211->isDescendantOf(child11) == false);
+    QVERIFY(child211->isDescendantOf(child12) == false);
+    QVERIFY(child211->isDescendantOf(child2));
+    QVERIFY(child211->isDescendantOf(child21));
+
+    delete root;
+    root = 0;
+    child1 = 0;
+    child11 = 0;
+    child12 = 0;
+    child2 = 0;
+    child21 = 0;
+    child211 = 0;
+}
+
+void TestTreeNode::parent()
+{
+    TreeNode *root = new TreeNode();
+    TreeNode *child1 = new TreeNode();
+    TreeNode *child12 = new TreeNode();
+    TreeNode *child13 = new TreeNode();
+
+    root->appendChild(child1);
+    child1->appendChild(child12);
+    child1->appendChild(child13);
+
+    QVERIFY(root->parent() == 0);
+    QVERIFY(child1->parent() == root);
+    QVERIFY(child12->parent() == child1);
+    QVERIFY(child13->parent() == child1);
+
+    delete root;
+    root = 0;
+    child1 = 0;
+    child12 = 0;
+    child13 = 0;
+}
+
+void TestTreeNode::row()
+{
+    TreeNode *root = new TreeNode();
+    TreeNode *child1 = new TreeNode();
+    TreeNode *child12 = new TreeNode();
+    TreeNode *child13 = new TreeNode();
+
+    root->appendChild(child1);
+    child1->appendChild(child12);
+    child1->appendChild(child13);
+
+    QVERIFY(root->row() == 0);
+    QVERIFY(child1->row() == 0);
+    QVERIFY(child12->row() == 0);
+    QVERIFY(child13->row() == 1);
+
+    delete root;
+    root = 0;
+    child1 = 0;
+    child12 = 0;
+    child13 = 0;
+}
+
+void TestTreeNode::removeChildAt()
+{
+    TreeNode *root = new TreeNode();
+    TreeNode *child1 = new TreeNode();
+    TreeNode *child12 = new TreeNode();
+    TreeNode *child13 = new TreeNode();
+    TreeNode *child2 = new TreeNode();
+
+    root->appendChild(child1);
+    child1->appendChild(child12);
+    child1->appendChild(child13);
+    root->appendChild(child2);
+
+    QVERIFY(root->childCount() == 2);
+    root->removeChildAt(1);
+    QVERIFY(root->childCount() == 1);
+
+    QVERIFY(child1->childCount() == 2);
+    child1->removeChildAt(child12->row());
+    QVERIFY(child1->childCount() == 1);
+    QVERIFY(child1->childAt(0) == child13);
+
+    root->removeChildAt(child1->row());
+    QVERIFY(root->childCount() == 0);
+
+    delete root;
+    root = 0;
+    child1 = 0;
+    child12 = 0;
+    child13 = 0;
+    child2 = 0;
+}
+
+void TestTreeNode::removeChildren()
+{
+    TreeNode *root = new TreeNode();
+    TreeNode *child1 = new TreeNode();
+    TreeNode *child12 = new TreeNode();
+    TreeNode *child13 = new TreeNode();
+    TreeNode *child2 = new TreeNode();
+
+    root->appendChild(child1);
+    child1->appendChild(child12);
+    child1->appendChild(child13);
+    root->appendChild(child2);
+
+    QVERIFY(child1->childCount() == 2);
+    child1->removeChildren();
+    QVERIFY(child1->childCount() == 0);
+
+    root->removeChildren();
+    QVERIFY(root->childCount() == 0);
+
+    delete root;
+    root = 0;
+    child1 = 0;
+    child12 = 0;
+    child13 = 0;
+    child2 = 0;
+}
+
+void TestTreeNode::appendChild()
+{
+    TreeNode *root = new TreeNode();
+    TreeNode *child1 = new TreeNode();
+    root->appendChild(child1);
+    QVERIFY(root->childCount() == 1);
+    QVERIFY(root->childAt(0) == child1);
+    QVERIFY(child1->parent() == root);
+
+    delete root;
+    root = 0;
+    child1 = 0;
+}
+
+void TestTreeNode::appendChildren()
+{
+    TreeNode *root = new TreeNode();
+    TreeNode *child1 = new TreeNode();
+    TreeNode *child2 = new TreeNode();
+    TreeNode *child3 = new TreeNode();
+    TreeNode *child4 = new TreeNode();
+
+    QList<TreeNode *> children;
+
+    // Test: appending empty list;
+    root->appendChildren(children);
+    QCOMPARE(root->childCount(), 0);
+
+    // Test: append empty list to list with one child
+    root->appendChild(child1);
+    root->appendChildren(children);
+    QCOMPARE(root->childCount(), 1);
+
+    // Test: append list with one child
+    children << child2;
+    root->appendChildren(children);
+    QCOMPARE(root->childCount(), 2);
+    QCOMPARE(root->childAt(0), child1);
+    QCOMPARE(root->childAt(1), child2);
+
+    // Test: append multiple children
+    children.clear();
+    children << child3 << child4;
+    root->appendChildren(children);
+    QCOMPARE(root->childCount(), 4);
+    QCOMPARE(root->childAt(0), child1);
+    QCOMPARE(root->childAt(1), child2);
+    QCOMPARE(root->childAt(2), child3);
+    QCOMPARE(root->childAt(3), child4);
+
+    delete root;
+    root = 0;
+    child1 = 0;
+    child2 = 0;
+    child3 = 0;
+    child4 = 0;
+}
+
+void TestTreeNode::insertChildAt()
+{
+    TreeNode *root = new TreeNode();
+
+    // Test: insert at first position with empty list
+    TreeNode *child1 = new TreeNode();
+    root->insertChildAt(0, child1);
+
+    QVERIFY(root->childCount() == 1);
+    QVERIFY(root->childAt(0) == child1);
+
+    // Test: insert at first position with non-empty list
+    TreeNode *child2 = new TreeNode();
+    root->insertChildAt(0, child2);
+    QVERIFY(root->childCount() == 2);
+    QVERIFY(root->childAt(0) == child2);
+    QVERIFY(root->childAt(1) == child1);
+
+    // Test: insert at end of list
+    TreeNode *child3 = new TreeNode();
+    root->insertChildAt(2, child3);
+    QVERIFY(root->childCount() == 3);
+    QVERIFY(root->childAt(0) == child2);
+    QVERIFY(root->childAt(1) == child1);
+    QVERIFY(root->childAt(2) == child3);
+
+    // Test: insert into middle of list
+    TreeNode *child4 = new TreeNode();
+    root->insertChildAt(1, child4);
+    QVERIFY(root->childCount() == 4);
+    QVERIFY(root->childAt(0) == child2);
+    QVERIFY(root->childAt(1) == child4);
+    QVERIFY(root->childAt(2) == child1);
+    QVERIFY(root->childAt(3) == child3);
+
+    // Test: verify that each child has its parent pointer set properly
+    QVERIFY(root->childAt(0)->parent() == root);
+    QVERIFY(root->childAt(1)->parent() == root);
+    QVERIFY(root->childAt(2)->parent() == root);
+    QVERIFY(root->childAt(3)->parent() == root);
+
+    delete root;
+    root = 0;
+    child1 = 0;
+    child2 = 0;
+    child3 = 0;
+    child4 = 0;
+}
+
+void TestTreeNode::takeChildren()
+{
+    TreeNode *root = new TreeNode();
+    TreeNode *child1 = new TreeNode();
+    TreeNode *child11 = new TreeNode();
+    TreeNode *child12 = new TreeNode();
+    TreeNode *child2 = new TreeNode();
+    TreeNode *child21 = new TreeNode();
+    TreeNode *child211 = new TreeNode();
+
+    // Test: taking children of isolated nodes should return empty lists
+    QVERIFY(root->takeChildren().isEmpty());
+    QVERIFY(child1->takeChildren().isEmpty());
+    QVERIFY(child11->takeChildren().isEmpty());
+    QVERIFY(child12->takeChildren().isEmpty());
+    QVERIFY(child2->takeChildren().isEmpty());
+    QVERIFY(child21->takeChildren().isEmpty());
+    QVERIFY(child211->takeChildren().isEmpty());
+
+    // Setup: build the tree
+    root->appendChild(child1);
+    child1->appendChild(child11);
+    child1->appendChild(child12);
+    root->appendChild(child2);
+    child2->appendChild(child21);
+    child21->appendChild(child211);
+
+    // Test: taking children of leaf nodes should return empty lists
+    QVERIFY(child11->takeChildren().isEmpty());
+    QVERIFY(child12->takeChildren().isEmpty());
+    QVERIFY(child211->takeChildren().isEmpty());
+    QCOMPARE(child1->childCount(), 2);
+    QCOMPARE(child21->childCount(), 1);
+
+    // Test: take children off the root
+    QList<TreeNode *> rootChildren = root->takeChildren();
+    QCOMPARE(root->childCount(), 0);
+    QCOMPARE(rootChildren.at(0), child1);
+    QCOMPARE(rootChildren.at(1), child2);
+    QVERIFY(rootChildren.at(0)->parent() == 0);
+    QVERIFY(rootChildren.at(1)->parent() == 0);
+
+    // Add them back on for further testing
+    root->appendChild(rootChildren.at(0));
+    root->appendChild(rootChildren.at(1));
+    rootChildren.clear();
+    QCOMPARE(root->childCount(), 2);
+    QVERIFY(child1->parent() == root);
+    QVERIFY(child2->parent() == root);
+
+    // Test: taking children of child1
+    QList<TreeNode *> child1Children = child1->takeChildren();
+    QCOMPARE(child1->childCount(), 0);
+    QCOMPARE(child1Children.at(0), child11);
+    QCOMPARE(child1Children.at(1), child12);
+    QVERIFY(child1Children.at(0)->parent() == 0);
+    QVERIFY(child1Children.at(1)->parent() == 0);
+
+    delete root;
+    root = 0;
+    child1 = 0;
+    child11 = 0;
+    child12 = 0;
+    child2 = 0;
+    child21 = 0;
+    child211 = 0;
+}
+
+QTEST_MAIN(TestTreeNode)
+#include "TestTreeNode.moc"

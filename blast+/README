@@ -1,0 +1,54 @@
+[25 Aug 2011]
+-- To build the custom blast+ files for use with AlignShop:
+
+   1) Download the relevant blast+ source from NCBI. By relevant, I mean the
+      blast+ version for which the patches are available. You can find the
+      supported versions by simply looking for the version subdirectories.
+      Currently, only 2.2.25 is supported.
+
+      URL: ftp://ftp.ncbi.nih.gov/blast/executables/blast+/2.2.25/ncbi-blast-2.2.25+-src.zip
+
+   2) Decompress to folder of choice
+   3) Patch the source using the patch_source.pl script:
+
+      $ ./patch_source.pl 2.2.25/ /path/to/decompressed/blast+/c++/
+
+   4) Configure the blast+ package:
+
+      ./configure --with-mt --without-debug --with-64 --with-lfs --with-strip
+
+   5) ./make -j9
+
+
+[31 Oct 2011]
+-- Psiblast did not respect the num_iterations, num_descriptions OR max_target_seqs arguments when outputting
+   XML reports.
+   1) include/algo/blast/format/blastxml_format.hpp
+
+      Added nMaxHits parameter to BlastFormatReport method with default value
+      of -1 (indicates no pruning)
+
+   2) src/algo/blast/format/blastxml_format.cpp
+
+      Added header to include blast_format.cpp (necessary for the Prune method)
+      Added maxhits parameter to BlastXML_FormatReport
+      Added maxhits parameter to the s_BlastXMLAddIteration method
+
+   3) src/algo/blast/format/blast_format.cpp
+
+      In PrintEpilog (method called for dumping XML data),
+      pass the max hits from command line to the BlastXML_FormatReport method
+
+[1 Nov 2011]
+-- Installing a fresh dev environment on windows (VS2010):
+
+   o Download VS2010 @ http://www.microsoft.com/visualstudio/en-us/products/2010-editions/visual-cpp-express
+     - Only includes the 32-bit version; however, that is sufficient for now
+
+
+   o Download: opensource library for VS2008
+   o Download: Qt-Creator
+
+[7 Nov 2011]
+-- Bugfix: infinite progress loop when BLASTing very small databases that contained fewer sequences than the number of
+   ticks (50).

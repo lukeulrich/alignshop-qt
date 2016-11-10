@@ -1,0 +1,62 @@
+Sprint:
+[L] User can import a sequence from a file.
+Display full list, scroll, and select.
+User can select a sub seq (record) which contains DNA sequence data.
+Given a DNA sequence, user can select two primer-regions, which must be greater than N in lenth.
+ - Wizard framework
+ - Screen layout
+ - Control to display DNA sequence and allow selection modifications.
+ - Primer design criteria object/model
+User can specify primer-finding parameters (CLARIFY)
+ - Screen layout
+ - Validation
+ - Restriction enzyme browser
+   - List restriction enzymes
+   - Real-time filtering based on free-text (P2)
+User can view ranked list of primer-pairs matching the criteria (region + parameters).
+ - Kick off external tool, passing parameters from primer design criteria object/model.
+ - Display progress/working indidcator.
+ - Display results in a multi-select list, indicate how many are selected.
+User can associate one or more of the primer-pairs with the original sub-seq.
+ - Object to associate primers to sequence and save to DB.
+User can view primer-pairs associated with a DNA sequence/sub-seq. (CLARIFY)
+ - Sequence details screen (gotten to by selecting a sequence in the organizer view and clicking something?)
+
+
+
+Schedule/Plan:
+  Nov 30: Design, Task
+  Nov 31: Work...
+  Dec 21: Code complete, Integration, Manual tests/fixes
+  Dec 22: Demo???
+
+
+
+Product:
+User can desgin a primer -------------------
+ - User can select a sub seq (record) which contains DNA sequence data.
+ - Given a DNA sequence, user can select two primer-regions, which must be greater than N in lenth.
+ - User can specify primer-finding parameters (CLARIFY)
+ - User can view ranked list of primer-pairs matching the criteria (region + parameters).
+ - User can associate one or more of the primer-pairs with the original sub-seq.
+ - User can send one or more primer-pairs to a primer vendor as a purchase order.
+ - User can view primer-pairs associated with a DNA sequence/sub-seq.
+User can import a sequence from a file.
+User can add a sequence to the document/system.
+User can import a sequence from web-service (CLARIFY).
+User can find a sequence.
+ - By phylogenetic tree.
+ - By type (DNA, RNA, Protein/Amino Acid)
+ - Free-text search auto-filters the list.
+ - Display full list, scroll, and select.
+ - By tag (CLARIFY)
+ - BLAST: find via similar sequence (enter a sequence, and find similar), include reverse compliment???
+ - Find DNA by protein.
+ - By feature/advanced find: e.g. sequences longer than 500, named "foo" and starting with "bar", contains a transmembrane region, etc.
+User can bulk edit (CLARIFY)
+Tags.... (CLARIFY)
+Extensibility -------------------------
+  User can add plugins (EPIC)
+  User can write QT scripts (EPIC)
+Reading frame (translate between 3 char pairs and the amino acids)
+Easily view reverse compliment.

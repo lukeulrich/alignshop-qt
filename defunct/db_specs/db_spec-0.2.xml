@@ -1,0 +1,226 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<db_schema xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="db_schema.xsd">
+
+<version>0.1</version>
+<table name="__info" comment="Metadata describing this document file">
+  <field name="name" type="text" not_null="true" />
+  <field name="value" type="text" />
+  <primaryKey>name</primaryKey>
+</table>
+<table name="data_tree" comment="MPTT compatible tree structure">
+  <field name="id" type="integer" autoincrement="true" comment="Primary key; sequence generated integer" />
+  <field name="type" type="text" not_null="true" comment="Node type. Constrained to specific types (see check below)" />
+  <field name="fk_id" type="integer" comment="Foreign key to the referred table (non-enforced)" />
+  <field name="label" type="text" comment="Only valid for non-table entities (e.g. folders/groups)" />
+  <field name="lft" type="integer" not_null="true" comment="MPTT field" />
+  <field name="rgt" type="integer" not_null="true" comment="MPTT field" />
+  <primaryKey>id</primaryKey>
+  <check>type IN ('root', 'group', 'seqamino', 'seqdna', 'seqrna', 'subseqamino', 'subseqdna', 'subseqrna', 'msaamino', 'msadna', 'msarna', 'primer')</check>
+  <check>fk_id > 0 || (type IN ('root','group') && fk_id IS NULL</check>
+  <check>lft > 0</check>
+  <check>rgt > lft</check>
+</table>
+<table name="astrings" comment="Unique, anonymous amino acid sequences">
+  <field name="id" type="integer" autoincrement="true" comment="Primary key; sequence generated integer" />
+  <field name="aseq_id" type="integer" comment="Foreign key to SedDepot.aseqs(id)" />
+  <field name="digest" type="text" comment="SHA1 hash of sequence for identification purposes; must be unique" />
+  <field name="sequence" type="text" not_null="true" comment="Raw, normalized sequence data" />
+  <primaryKey>id</primaryKey>
+  <unique>digest</unique>
+  <check>length(sequence) > 0</check>
+</table>
+<table name="dstrings" comment="Unique, anonymous DNA sequences">
+  <field name="id" type="integer" autoincrement="true" comment="Primary key; sequence generated integer" />
+  <field name="dseq_id" type="integer" comment="Foreign key to SedDepot.dseqs(id)" />
+  <field name="digest" type="text" comment="SHA1 hash of sequence for identification purposes; must be unique" />
+  <field name="sequence" type="text" not_null="true" comment="Raw, normalized sequence data" />
+  <primaryKey>id</primaryKey>
+  <unique>digest</unique>
+  <check>length(sequence) > 0</check>
+</table>
+<table name="rstrings" comment="Unique, anonymous RNA sequences">
+  <field name="id" type="integer" autoincrement="true" comment="Primary key; sequence generated integer" />
+  <field name="rseq_id" type="integer" comment="Foreign key to SedDepot.rseqs(id)" />
+  <field name="digest" type="text" comment="SHA1 hash of sequence for identification purposes; must be unique" />
+  <field name="sequence" type="text" not_null="true" comment="Raw, normalized sequence data" />
+  <primaryKey>id</primaryKey>
+  <unique>digest</unique>
+  <check>length(sequence) > 0</check>
+</table>
+<table name="amino_seqs" comment="Amino acid sequences and annotations; possibly redundant in both sequence and annotation">
+  <field name="id" type="integer" autoincrement="true" comment="Primary key; sequence generated integer" />
+  <field name="astring_id" type="integer" not_null="true" comment="Foreign key to astrings(id)" />
+  <field name="label" type="text" not_null="true" comment="Arbitrary user label" />
+  <field name="source" type="text" comment="Sequence source (e.g. organism, virus, etc.)" />
+  <field name="protein" type="text" comment="Name of protein (if applicable)" />
+  <field name="created" type="text" not_null="true" default="current_timestamp" comment="When this record was created" />
+  <primaryKey>id</primaryKey>
+  <foreignKey onUpdate="cascade" onDelete="cascade">
+    <srcFields>astring_id</srcFields>
+    <refTable>astrings</refTable>
+    <refFields>id</refFields>
+  </foreignKey>
+  <index name="amino_seqs_astring_id_index">astring_id</index>
+</table>
+<table name="amino_subseqs" comment="Amino acid subsequences">
+  <field name="id" type="integer" autoincrement="true" comment="Primary key; sequence generated integer" />
+  <field name="amino_seq_id" type="integer" not_null="true" comment="Foreign key to amino_seqs(id)" />
+  <field name="label" type="text" comment="Arbitrary user label" />
+  <field name="start" type="integer" not_null="true" comment="Start position (1-based) of subseq within source sequence" />
+  <field name="stop" type="integer" not_null="true" comment="Stop position (1-based) of subseq within source sequence" />
+  <field name="sequence" type="text" not_null="true" comment="Gapped sequence data for this subseq" />
+  <field name="notes" type="text" comment="User-annotation" />
+  <field name="created" type="text" not_null="true" default="current_timestamp" comment="When this record was created" />
+  <primaryKey>id</primaryKey>
+  <foreignKey onUpdate="cascade" onDelete="cascade">
+    <srcFields>amino_seq_id</srcFields>
+    <refTable>amino_seqs</refTable>
+    <refFields>id</refFields>
+  </foreignKey>
+  <check>start > 0</check>
+  <check>stop >= start</check>
+</table>
+<table name="amino_msas" comment="Amino acid multiple sequence alignments">
+  <field name="id" type="integer" autoincrement="true" comment="Primary key; sequence generated integer" />
+  <field name="name" type="text" not_null="true" comment="Custom alignment name" />
+  <field name="description" type="text" comment="Free-form description" />
+  <field name="created" type="text" not_null="true" default="current_timestamp" comment="When this record was created" />
+  <primaryKey>id</primaryKey>
+</table>
+<table name="amino_msas_subseqs" comment="Amino acid subsequences belonging to an alignment">
+  <field name="id" type="integer" autoincrement="true" comment="Primary key; sequence generated integer" />
+  <field name="amino_msa_id" type="integer" not_null="true" comment="Foreign key to amino_msas(id)" />
+  <field name="amino_subseq_id" type="integer" not_null="true" comment="Foreign key to amino_subseqs(id)" />
+  <field name="position" type="integer" not_null="true" comment="Order of this subseq within the MSA" />
+  <primaryKey>id</primaryKey>
+  <foreignKey onUpdate="cascade" onDelete="cascade">
+    <srcFields>amino_msa_id</srcFields>
+    <refTable>amino_msas</refTable>
+    <refFields>id</refFields>
+  </foreignKey>
+  <foreignKey onUpdate="cascade" onDelete="cascade">
+    <srcFields>amino_subseq_id</srcFields>
+    <refTable>amino_subseqs</refTable>
+    <refFields>id</refFields>
+  </foreignKey>
+  <unique>amino_msa_id, amino_subseq_id</unique>
+</table>
+<table name="dna_seqs" comment="DNA sequences and annotations; possibly redundant in both sequence and annotation">
+  <field name="id" type="integer" autoincrement="true" comment="Primary key; sequence generated integer" />
+  <field name="dstring_id" type="integer" not_null="true" comment="Foreign key to dstrings(id)" />
+  <field name="label" type="text" not_null="true" comment="Arbitrary user label" />
+  <field name="source" type="text" comment="Sequence source (e.g. organism, virus, etc.)" />
+  <field name="gene" type="text" comment="Name of gene (if applicable)" />
+  <field name="created" type="text" not_null="true" default="current_timestamp" comment="When this record was created" />
+  <primaryKey>id</primaryKey>
+  <foreignKey onUpdate="cascade" onDelete="cascade">
+    <srcFields>dstring_id</srcFields>
+    <refTable>dstrings</refTable>
+    <refFields>id</refFields>
+  </foreignKey>
+  <index name="dna_seqs_dstring_id_index">dstring_id</index>
+</table>
+<table name="dna_subseqs" comment="DNA subsequences">
+  <field name="id" type="integer" autoincrement="true" comment="Primary key; sequence generated integer" />
+  <field name="dna_seq_id" type="integer" not_null="true" comment="Foreign key to dna_seqs(id)" />
+  <field name="label" type="text" comment="Arbitrary user label" />
+  <field name="start" type="integer" not_null="true" comment="Start position (1-based) of subseq within source sequence" />
+  <field name="stop" type="integer" not_null="true" comment="Stop position (1-based) of subseq within source sequence" />
+  <field name="sequence" type="text" not_null="true" comment="Gapped sequence data for this subseq" />
+  <field name="notes" type="text" comment="User-annotation" />
+  <field name="created" type="text" not_null="true" default="current_timestamp" comment="When this record was created" />
+  <primaryKey>id</primaryKey>
+  <foreignKey onUpdate="cascade" onDelete="cascade">
+    <srcFields>dna_seq_id</srcFields>
+    <refTable>dna_seqs</refTable>
+    <refFields>id</refFields>
+  </foreignKey>
+  <check>start > 0</check>
+  <check>stop >= start</check>
+</table>
+<table name="dna_msas" comment="DNA multiple sequence alignments">
+  <field name="id" type="integer" autoincrement="true" comment="Primary key; sequence generated integer" />
+  <field name="name" type="text" not_null="true" comment="Custom alignment name" />
+  <field name="description" type="text" comment="Free-form description" />
+  <field name="created" type="text" not_null="true" default="current_timestamp" comment="When this record was created" />
+  <primaryKey>id</primaryKey>
+</table>
+<table name="dna_msas_subseqs" comment="DNA subsequences belonging to an alignment">
+  <field name="id" type="integer" autoincrement="true" comment="Primary key; sequence generated integer" />
+  <field name="dna_msa_id" type="integer" not_null="true" comment="Foreign key to dna_msas(id)" />
+  <field name="dna_subseq_id" type="integer" not_null="true" comment="Foreign key to dna_subseqs(id)" />
+  <field name="position" type="integer" not_null="true" comment="Order of this subseq within the MSA" />
+  <primaryKey>id</primaryKey>
+  <foreignKey onUpdate="cascade" onDelete="cascade">
+    <srcFields>dna_msa_id</srcFields>
+    <refTable>dna_msas</refTable>
+    <refFields>id</refFields>
+  </foreignKey>
+  <foreignKey onUpdate="cascade" onDelete="cascade">
+    <srcFields>dna_subseq_id</srcFields>
+    <refTable>dna_subseqs</refTable>
+    <refFields>id</refFields>
+  </foreignKey>
+  <unique>dna_msa_id, dna_subseq_id</unique>
+</table>
+<table name="rna_seqs" comment="RNA sequences and annotations; possibly redundant in both sequence and annotation">
+  <field name="id" type="integer" autoincrement="true" comment="Primary key; sequence generated integer" />
+  <field name="rstring_id" type="integer" not_null="true" comment="Foreign key to rstrings(id)" />
+  <field name="label" type="text" not_null="true" comment="Arbitrary user label" />
+  <field name="source" type="text" comment="Sequence source (e.g. organism, virus, etc.)" />
+  <field name="gene" type="text" comment="Name of gene (if applicable)" />
+  <field name="created" type="text" not_null="true" default="current_timestamp" comment="When this record was created" />
+  <primaryKey>id</primaryKey>
+  <foreignKey onUpdate="cascade" onDelete="cascade">
+    <srcFields>rstring_id</srcFields>
+    <refTable>rstrings</refTable>
+    <refFields>id</refFields>
+  </foreignKey>
+  <index name="rna_seqs_rstring_id_index">rstring_id</index>
+</table>
+<table name="rna_subseqs" comment="RNA subsequences">
+  <field name="id" type="integer" autoincrement="true" comment="Primary key; sequence generated integer" />
+  <field name="rna_seq_id" type="integer" not_null="true" comment="Foreign key to rna_seqs(id)" />
+  <field name="label" type="text" comment="Arbitrary user label" />
+  <field name="start" type="integer" not_null="true" comment="Start position (1-based) of subseq within source sequence" />
+  <field name="stop" type="integer" not_null="true" comment="Stop position (1-based) of subseq within source sequence" />
+  <field name="sequence" type="text" not_null="true" comment="Gapped sequence data for this subseq" />
+  <field name="notes" type="text" comment="User-annotation" />
+  <field name="created" type="text" not_null="true" default="current_timestamp" comment="When this record was created" />
+  <primaryKey>id</primaryKey>
+  <foreignKey onUpdate="cascade" onDelete="cascade">
+    <srcFields>rna_seq_id</srcFields>
+    <refTable>rna_seqs</refTable>
+    <refFields>id</refFields>
+  </foreignKey>
+  <check>start > 0</check>
+  <check>stop >= start</check>
+</table>
+<table name="rna_msas" comment="RNA multiple sequence alignments">
+  <field name="id" type="integer" autoincrement="true" comment="Primary key; sequence generated integer" />
+  <field name="name" type="text" not_null="true" comment="Custom alignment name" />
+  <field name="description" type="text" comment="Free-form description" />
+  <field name="created" type="text" not_null="true" default="current_timestamp" comment="When this record was created" />
+  <primaryKey>id</primaryKey>
+</table>
+<table name="rna_msas_subseqs" comment="RNA subsequences belonging to an alignment">
+  <field name="id" type="integer" autoincrement="true" comment="Primary key; sequence generated integer" />
+  <field name="rna_msa_id" type="integer" not_null="true" comment="Foreign key to rna_msas(id)" />
+  <field name="rna_subseq_id" type="integer" not_null="true" comment="Foreign key to rna_subseqs(id)" />
+  <field name="position" type="integer" not_null="true" comment="Order of this subseq within the MSA" />
+  <primaryKey>id</primaryKey>
+  <foreignKey onUpdate="cascade" onDelete="cascade">
+    <srcFields>rna_msa_id</srcFields>
+    <refTable>rna_msas</refTable>
+    <refFields>id</refFields>
+  </foreignKey>
+  <foreignKey onUpdate="cascade" onDelete="cascade">
+    <srcFields>rna_subseq_id</srcFields>
+    <refTable>rna_subseqs</refTable>
+    <refFields>id</refFields>
+  </foreignKey>
+  <unique>rna_msa_id, rna_subseq_id</unique>
+</table>
+<pragma>pragma foreign_keys = ON;</pragma>
+</db_schema>

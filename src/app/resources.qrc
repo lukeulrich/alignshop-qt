@@ -1,0 +1,76 @@
+<RCC>
+    <qresource prefix="/">
+        <file alias="aliases/images/icons/application-exit">resources/images/icons/oxygen/actions/application-exit.png</file>
+        <file alias="aliases/images/icons/document-close">resources/images/icons/oxygen/actions/document-close.png</file>
+        <file alias="aliases/images/icons/document-revert">resources/images/icons/oxygen/actions/document-revert.png</file>
+        <file alias="aliases/images/icons/document-save">resources/images/icons/oxygen/actions/document-save.png</file>
+        <file alias="aliases/images/icons/document-save-as">resources/images/icons/oxygen/actions/document-save-as.png</file>
+        <file alias="aliases/images/icons/edit-copy">resources/images/icons/oxygen/actions/edit-copy.png</file>
+        <file alias="aliases/images/icons/edit-cut">resources/images/icons/oxygen/actions/edit-cut.png</file>
+        <file alias="aliases/images/icons/edit-paste">resources/images/icons/oxygen/actions/edit-paste.png</file>
+        <file alias="aliases/images/icons/edit-redo">resources/images/icons/oxygen/actions/edit-redo.png</file>
+        <file alias="aliases/images/icons/edit-select">resources/images/icons/oxygen/actions/edit-select.png</file>
+        <file alias="aliases/images/icons/edit-select-all">resources/images/icons/oxygen/actions/edit-select-all.png</file>
+        <file alias="aliases/images/icons/edit-undo">resources/images/icons/oxygen/actions/edit-undo.png</file>
+        <file alias="aliases/images/icons/dna-seq">resources/images/icons/custom/dna-seq.png</file>
+        <file alias="aliases/images/icons/amino-msa">resources/images/icons/custom/amino-msa.png</file>
+        <file alias="aliases/images/icons/amino-seq">resources/images/icons/custom/amino-seq.png</file>
+        <file alias="aliases/images/icons/dna-msa">resources/images/icons/custom/dna-msa.png</file>
+        <file alias="aliases/images/cursors/hand-tool">resources/images/cursors/qt/cursor-openhand.png</file>
+        <file alias="aliases/images/cursors/zoom-in">resources/images/cursors/cursor-zoom-in.png</file>
+        <file alias="aliases/images/cursors/zoom-out">resources/images/cursors/cursor-zoom-out.png</file>
+        <file alias="aliases/images/icons/deselect-all">resources/images/icons/custom/deselect-all.png</file>
+        <file alias="aliases/images/icons/view-form-table">resources/images/icons/oxygen/actions/view-form-table.png</file>
+        <file alias="aliases/images/icons/view-history">resources/images/icons/oxygen/actions/view-history.png</file>
+        <file alias="aliases/fonts/VeraMono">resources/fonts/VeraMono.ttf</file>
+        <file alias="aliases/fonts/Cousine-Regular-Latin">resources/fonts/Cousine-Regular-Latin.ttf</file>
+        <file alias="aliases/fonts/Inconsolata">resources/fonts/Inconsolata.otf</file>
+        <file alias="aliases/fonts/AnonymousPro">resources/fonts/AnonymousPro.ttf</file>
+        <file alias="aliases/fonts/Cabin-Regular">resources/fonts/Cabin-Regular.otf</file>
+        <file alias="aliases/fonts/DejaVuSans">resources/fonts/DejaVuSans.ttf</file>
+        <file alias="aliases/fonts/DejaVuSansCondensed">resources/fonts/DejaVuSansCondensed.ttf</file>
+        <file alias="aliases/fonts/DejaVuSansMono">resources/fonts/DejaVuSansMono.ttf</file>
+        <file alias="aliases/images/icons/view-refresh">resources/images/icons/oxygen/actions/view-refresh.png</file>
+        <file alias="aliases/images/icons/arrow-right">resources/images/icons/oxygen/actions/arrow-right.png</file>
+        <file alias="aliases/images/icons/blast">resources/images/icons/oxygen/actions/fork.png</file>
+        <file>resources/images/icons/oxygen/actions/tools-wizard.png</file>
+        <file alias="aliases/images/icons/edit-table-delete-column">resources/images/icons/oxygen/actions/edit-table-delete-column.png</file>
+        <file alias="aliases/images/icons/applications-graphics">resources/images/icons/oxygen/categories/applications-graphics.png</file>
+        <file alias="aliases/images/icons/okteta">resources/images/icons/oxygen/apps/okteta.png</file>
+        <file alias="aliases/images/icons/new-sequence">resources/images/icons/custom/new-sequence.png</file>
+        <file>resources/images/icons/seanau/Add.png</file>
+        <file alias="aliases/images/icons/task-manager">resources/images/icons/seanau/Add-ons setup.png</file>
+        <file>resources/images/icons/seanau/Cancel.png</file>
+        <file>resources/images/icons/seanau/Confirm.png</file>
+        <file>resources/images/icons/seanau/Databases.png</file>
+        <file>resources/images/icons/seanau/Database share.png</file>
+        <file>resources/images/icons/seanau/Delete folder.png</file>
+        <file>resources/images/icons/seanau/Delete.png</file>
+        <file alias="aliases/images/icons/folder-open">resources/images/icons/seanau/Folder open.png</file>
+        <file alias="aliases/images/icons/folder">resources/images/icons/seanau/Folder.png</file>
+        <file>resources/images/icons/seanau/Information-B.png</file>
+        <file>resources/images/icons/seanau/Magnifier3.png</file>
+        <file>resources/images/icons/seanau/New database.png</file>
+        <file>resources/images/icons/seanau/New document.png</file>
+        <file>resources/images/icons/seanau/New folder.png</file>
+        <file>resources/images/icons/seanau/Open.png</file>
+        <file alias="aliases/images/icons/ruler">resources/images/icons/seanau/Ruler.png</file>
+        <file>resources/images/icons/seanau/Zoom in-A.png</file>
+        <file>resources/images/icons/seanau/Zoom out-A.png</file>
+        <file>resources/images/icons/seanau/Zoom tool.png</file>
+        <file>resources/images/icons/seanau/Remove circle.png</file>
+        <file>resources/images/icons/seanau/Success.png</file>
+        <file>resources/images/icons/seanau/Cut.png</file>
+        <file>resources/images/icons/seanau/Copy.png</file>
+        <file>resources/images/icons/seanau/Paste.png</file>
+        <file alias="aliases/images/icons/gap-tool">resources/images/icons/seanau/Form_Insert_Col.png</file>
+        <file>resources/images/icons/seanau/File import.png</file>
+        <file>resources/images/icons/seanau/File export.png</file>
+        <file>resources/images/icons/seanau/Clean.png</file>
+        <file alias=":aliases/images/icons/alignshop">resources/images/icons/align_shop_logo_24.png</file>
+        <file>resources/images/align_shop_logo_256.png</file>
+        <file>resources/images/icons/oxygen/actions/bookmarks.png</file>
+        <file>resources/images/icons/seanau/Image_Photo.png</file>
+        <file>BetaLicense.html</file>
+    </qresource>
+</RCC>

@@ -1,0 +1,20 @@
+[23 September 2010]
+Database: adoc_db_data_source
+Description: contains {a,d,r}strings, their seqs and subseqs, and msas for all
+	     three types along with additional subseqs that are not part of a
+	     MSA.
+
+	     Data tree overview:
+
+	     Root
+	     |___ Alpha (PAS)
+	     	  |___ Asubseq
+		  |___ Amsa
+	     |___ Delta
+	     	  |___ Dsubseq
+		  |___ Dmsa
+	     |___ Rho
+	     	  |___ Rsubseq
+		  |___ Rmsa
+
+
